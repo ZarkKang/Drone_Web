@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    </head>
+<body>
+    <header class="navbar">
+        <div class="logo"><i class="fas fa-drone"></i> Drone_Web 系统</div>
+        <nav id="mainNav">
+            <a href="/" onclick="navigate(event, '/')"><i class="fas fa-tachometer-alt"></i> 仪表盘</a>
+            <a href="/camera" onclick="navigate(event, '/camera')"><i class="fas fa-camera"></i> 相机设置</a>
+            <a href="/database" onclick="navigate(event, '/database')"><i class="fas fa-database"></i> 数据库</a>
+        </nav>
+        <div class="status">后台扫描中: <span id="bg-scanner-status" style="color: #10b981;">运行中</span></div>
+    </header>
+
+    <div id="persistent-scanner" style="display: none;">
+        <video id="videoFeed" autoplay playsinline muted></video>
+    </div>
+
+    <main id="app-content">
+        <%- body %> 
+    </main>
+
+    <script>
+        // 1. 全局持久化逻辑 (扫描/入库)
+        let processedIDs = new Set();
+        
+        async function globalTick() {
+            const video = document.getElementById('videoFeed');
+            if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                const canvas = document.createElement('canvas');
+                canvas.width = video.videoWidth;
+                canvas.height = video.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+                const code = jsQR(ctx.getImageData(0,0,canvas.width,canvas.height).data, canvas.width, canvas.height);
+                
+                if (code && code.data) {
+                    if (!processedIDs.has(code.data)) {
+                        processedIDs.add(code.data);
+                        await handleAutoSave(canvas, code);
+                    }
+                }
+            }
+            requestAnimationFrame(globalTick);
+        }
+
+        async function handleAutoSave(canvas, code) {
+            // 裁剪与上传逻辑 (同上一轮优化)
+            const qrImage = cropQR(canvas, code.location);
+            const record = { cargoId: code.data, qrImage, envImage: canvas.toDataURL('image/jpeg', 0.3) };
+            
+            await fetch('/api/save-record', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(record)
+            });
+
+            // 【需求实现】即使在其他页面，也能更新 index 页面的显示（如果当前正在 index 页）
+            updateUIIfOnIndex(code.data, qrImage);
+        }
+
+        // 2. SPA 导航逻辑：切换页面不刷新
+        async function navigate(e, url) {
+            e.preventDefault();
+            
+            // 离开前逻辑：清理上一个页面的定时器
+            if (typeof stopLiveUpdate === 'function') {
+                stopLiveUpdate();
+            }
+
+            const contentArea = document.getElementById('app-content');
+            try {
+                const response = await fetch(url, { headers: { 'x-partial-content': 'true' } });
+                const html = await response.text();
+                contentArea.innerHTML = html;
+                
+                // 关键：fetch 获得的 script 标签不会自动执行，需要手动处理
+                const scripts = contentArea.querySelectorAll('script');
+                scripts.forEach(oldScript => {
+                    const newScript = document.createElement('script');
+                    newScript.text = oldScript.text;
+                    document.body.appendChild(newScript).parentNode.removeChild(newScript);
+                });
+
+                window.history.pushState({}, '', url);
+            } catch (err) {
+                location.href = url;
+            }
+        }
+
+        function updateUIIfOnIndex(id, imgData) {
+            const lastImg = document.getElementById('last-qr-img');
+            const qrDataBox = document.getElementById('qr-data');
+            if (lastImg && qrDataBox) {
+                lastImg.src = imgData;
+                lastImg.style.display = 'block';
+                qrDataBox.innerText = "识别到新货物: " + id;
+            }
+        }
+
+        // 初始化相机 (只在系统启动时执行一次)
+        initApp(); // 内部调用 globalTick [cite: 23, 28]
+    </script>
+</body>
+</html>

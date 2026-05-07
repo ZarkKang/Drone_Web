@@ -23,21 +23,24 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // 3. 页面路由
-app.get('/', (req, res) => res.render('index', { title: '无人机监控仪表盘' }));
-app.get('/camera', (req, res) => res.render('camera', { title: '相机设置' }));
+const renderPage = async (req, res, view, data) => {
+    // 如果请求头包含 pjax 或 partial，说明是异步加载内容，不返回布局外壳
+    if (req.headers['x-partial-content']) {
+        res.render(view, { ...data, layout: false });
+    } else {
+        // 否则返回完整页面（包含 layout 逻辑）
+        res.render(view, data);
+    }
+};
 
-// 【重要修复】合并后的数据库页面路由，确保 records 被正确传入
+app.get('/', (req, res) => renderPage(req, res, 'index', { title: '仪表盘' }));
+app.get('/camera', (req, res) => renderPage(req, res, 'camera', { title: '相机设置' }));
 app.get('/database', async (req, res) => {
     try {
         const records = await CargoRecord.find().sort({ timestamp: -1 }).limit(100);
-        console.log(`[路由] 渲染数据库页面，记录数: ${records.length}`);
-        res.render('database', { 
-            title: '数据库记录', 
-            records: records 
-        });
+        renderPage(req, res, 'database', { title: '数据库记录', records });
     } catch (err) {
-        console.error("数据库查询失败:", err);
-        res.status(500).send("数据库查询失败");
+        res.status(500).send("DB Error");
     }
 });
 
@@ -90,11 +93,11 @@ app.delete('/api/delete-record/:id', async (req, res) => {
 // 供前端异步刷新使用的 API
 app.get('/api/records', async (req, res) => {
     try {
-        const records = await CargoRecord.find().sort({ timestamp: -1 });
-        res.json(records); // 必须返回 JSON 数组
+        // 使用 .sort({ timestamp: -1 }) 确保最新的一条在最上面
+        const records = await CargoRecord.find().sort({ timestamp: -1 }).limit(50);
+        res.json(records);
     } catch (err) {
-        console.error("API Error:", err);
-        res.status(500).json({ error: "数据库查询失败" });
+        res.status(500).json([]);
     }
 });
 

@@ -134,3 +134,11 @@ body { background: var(--bg); color: var(--text); font-family: sans-serif; margi
     cursor: pointer;
 }
 .modal-actions { margin-top: 20px; }
+
+#app-content {
+    transition: opacity 0.3s ease;
+}
+/* 当页面正在加载时可以给内容区加个半透明效果 */
+.loading #app-content {
+    opacity: 0.5;
+}
