@@ -1,10 +1,22 @@
-version: '3.8'
 services:
   web:
-    image: node:18-alpine
-    working_dir: /app
+    build: .
     volumes:
-      - .:/app  # 将当前文件夹“挂载”到容器，实现实时同步
+      - .:/app
+      - /app/node_modules  # 关键：这行会让容器内部安装好的依赖库“浮”在挂载目录之上
     ports:
       - "3000:3000"
-    command: sh -c "npm install && node app.js"
+    environment:
+      - MONGO_URL=mongodb://mongodb:27017/drone_db
+    depends_on:
+      - mongodb
+
+  mongodb:
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+volumes:
+  mongo-data:

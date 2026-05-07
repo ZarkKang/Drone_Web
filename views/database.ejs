@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <style>
+        /* 针对数据库页面的特定样式优化 */
+        .db-container { padding: 30px; }
+        .data-table-card { background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: var(--shadow); }
+        
+        table { width: 100%; border-collapse: collapse; color: var(--text); }
+        th { background: rgba(255,255,255,0.05); padding: 15px; text-align: left; color: var(--primary); font-size: 0.9rem; text-transform: uppercase; }
+        td { padding: 15px; border-bottom: 1px solid #334155; font-size: 0.9rem; }
+        tr:hover { background: rgba(56, 189, 248, 0.05); }
+
+        .img-preview { 
+            width: 80px; height: 50px; object-fit: cover; border-radius: 4px; 
+            cursor: pointer; transition: 0.3s; border: 1px solid #475569;
+        }
+        .img-preview:hover { transform: scale(1.1); border-color: var(--primary); }
+
+        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
+        .badge-id { background: rgba(56, 189, 248, 0.2); color: var(--primary); }
+        .badge-qty { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+
+        /* 模态框 (点击图片放大) */
+        #modal { display: none; position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); justify-content: center; align-items: center; }
+        #modal img { max-width: 90%; max-height: 90%; border: 2px solid var(--primary); border-radius: 8px; }
+    </style>
+</head>
+<body>
+    <header class="navbar">
+        <div class="logo"><i class="fas fa-drone"></i> Drone_Web 系统</div>
+        <nav>
+            <a href="/">仪表盘</a>
+            <a href="/camera">相机设置</a>
+            <a href="/database" class="active">数据库</a>
+        </nav>
+    </header>
+
+    <main class="db-container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h2 style="color: var(--text);"><i class="fas fa-table"></i> 货物存档记录</h2>
+            <button onclick="loadRecords()" class="btn-control-main" style="width: auto; padding: 8px 20px;">
+                <i class="fas fa-sync"></i> 刷新数据
+            </button>
+        </div>
+
+        <div class="data-table-card">
+            <table>
+                <thead>
+                    <tr>
+                        <th>时间戳</th>
+                        <th>货物 ID</th>
+                        <th>数量</th>
+                        <th>坐标 (X, Y, Z)</th>
+                        <th>全景图</th>
+                        <th>操作</th>
+                    </tr>
+                </thead>
+                <tbody id="dbTableBody">
+                    <% if (records && records.length > 0) { %>
+                        <% records.forEach(record => { %>
+                            <tr>
+                                <td><%= new Date(record.timestamp).toLocaleString() %></td>
+                                <td><span class="badge badge-id"><%= record.cargoId %></span></td>
+                                <td><span class="badge badge-qty"><%= record.quantity || 1 %></span></td>
+                                <td><%= record.location.x %>, <%= record.location.y %>, <%= record.location.z %></td>
+                                <td>
+                                    <% if(record.envImage) { %>
+                                        <img src="<%= record.envImage %>" class="img-preview" onclick="showModal(this.src)">
+                                    <% } else { %>
+                                        无图
+                                    <% } %>
+                                </td>
+                                <td><i class="fas fa-check-circle" style="color:#10b981"></i></td>
+                            </tr>
+                        <% }) %>
+                    <% } else { %>
+                        <tr><td colspan="6" style="text-align:center;">暂无数据</td></tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </main>
+<div id="modal" onclick="this.style.display='none'">
+        <img id="modalImg" src="">
+    </div>
+
+    <script>
+        // 页面加载完成后自动加载数据
+        window.onload = loadRecords;
+
+        async function loadRecords() {
+            const tableBody = document.getElementById('dbTableBody');
+            tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">正在加载云端数据...</td></tr>';
+
+            try {
+                // 向后端 API 请求所有记录
+                const response = await fetch('/api/records');
+                const records = await response.json();
+
+                if (records.length === 0) {
+                    tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;">数据库中暂无记录</td></tr>';
+                    return;
+                }
+
+                // 清空表格并填充
+                tableBody.innerHTML = '';
+                records.forEach(record => {
+                    const row = document.createElement('tr');
+                    
+                    // 格式化坐标显示
+                    const loc = record.location ? `${record.location.x}, ${record.location.y}, ${record.location.z}` : 'N/A';
+                    
+                    row.innerHTML = `
+                        <td>${new Date(record.timestamp).toLocaleString()}</td>
+                        <td><span class="badge badge-id">${record.cargoId}</span></td>
+                        <td><span class="badge badge-qty">${record.quantity || 1}</span></td>
+                        <td>${loc}</td>
+                        <td>
+                            ${record.envImage ? `<img src="${record.envImage}" class="img-preview" onclick="showModal('${record.envImage}')">` : '无图'}
+                        </td>
+                        <td>
+                            <button onclick="deleteRecord('${record._id}')" style="background:none; border:none; color:#ef4444; cursor:pointer;">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (err) {
+                console.error("加载失败:", err);
+                tableBody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#ef4444;">获取数据失败，请检查后端服务</td></tr>';
+            }
+        }
+
+        // 图片放大功能
+        function showModal(src) {
+            const modal = document.getElementById('modal');
+            const modalImg = document.getElementById('modalImg');
+            modal.style.display = 'flex';
+            modalImg.src = src;
+        }
+
+        // 删除记录功能
+        async function deleteRecord(id) {
+            if(!confirm('确定要删除这条记录吗？')) return;
+            
+            try {
+                // 注意这里的路径必须和后端 app.delete 里的路径一致
+                const response = await fetch(`/api/delete-record/${id}`, { 
+                    method: 'DELETE' 
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 删除成功后刷新表格数据
+                    loadRecords(); 
+                } else {
+                    alert('删除失败: ' + result.message);
+                }
+            } catch (err) {
+                console.error('删除操作异常:', err);
+                alert('无法连接服务器');
+            }
+        }
+    </script>
+</body>
+</html>

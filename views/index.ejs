@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="/style.css">
+    <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+</head>
+<body>
+    
+    <header class="navbar">
+        <div class="logo"><i class="fas fa-drone"></i> Drone_Web 系统</div>
+        <nav>
+            <a href="/" class="active"><i class="fas fa-tachometer-alt"></i> 仪表盘</a>
+            <a href="/camera"><i class="fas fa-camera"></i> 相机设置</a>
+            <a href="/database"><i class="fas fa-database"></i> 数据库</a>
+        </nav>
+        <div class="status">系统状态: <span class="status-ok">正常</span></div>
+    </header>
+
+    <main class="dashboard-container">
+        
+        <div class="card video-card">
+            <div class="card-header">
+                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                    <span><i class="fas fa-video"></i> 实时监控</span>
+                    <select id="videoSource" class="select-input"></select>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="video-container">
+                    <video id="videoFeed" autoplay playsinline muted></video>
+                </div>
+            </div>
+        </div>
+
+        <div class="card qr-card">
+            <div class="card-header"><i class="fas fa-qrcode"></i> 最近识别结果</div>
+            <div class="card-body" style="display: flex; gap: 15px; align-items: center;">
+                <div id="qr-crop-container" style="width: 120px; height: 120px; border: 2px solid #3b82f6; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
+                    <img id="last-qr-img" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                    <i id="qr-placeholder" class="fas fa-box-open" style="color: #475569; font-size: 2rem;"></i>
+                </div>
+                <div style="flex: 1;">
+                    <div class="info-box" id="qr-data" style="margin-bottom: 5px; font-weight: bold; color: #3b82f6;">等待扫描...</div>
+                    <small id="scan-status" style="color: #94a3b8;">自动检测模式已开启</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="card db-card">
+            <div class="card-header"><i class="fas fa-chart-line"></i> 传感器历史数据</div>
+            <div class="card-body">
+                <canvas id="dbChart"></canvas>
+            </div>
+        </div>
+
+    </main>
+
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        const videoElement = document.getElementById('videoFeed');
+        const videoSelect = document.getElementById('videoSource');
+        const qrDataDisplay = document.getElementById('qr-data');
+        const scanStatus = document.getElementById('scan-status');
+        const lastQrImg = document.getElementById('last-qr-img');
+        const qrPlaceholder = document.getElementById('qr-placeholder');
+
+        let currentStream = null;
+        let lastScannedCode = null; // 防重复识别开关
+
+        // 1. 初始化相机与设备列表
+        async function initApp() {
+            try {
+                await navigator.mediaDevices.getUserMedia({ video: true });
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                
+                videoSelect.innerHTML = videoDevices.map((d, i) => 
+                    `<option value="${d.deviceId}">${d.label || '相机 ' + (i+1)}</option>`
+                ).join('');
+
+                const savedId = localStorage.getItem('defaultCameraId');
+                if (savedId && videoDevices.find(d => d.deviceId === savedId)) {
+                    videoSelect.value = savedId;
+                }
+                
+                startStream(videoSelect.value);
+                // 启动循环扫描
+                requestAnimationFrame(tick);
+            } catch (err) {
+                qrDataDisplay.innerText = "错误: 无法获取相机权限";
+            }
+        }
+
+        async function startStream(deviceId) {
+            if (currentStream) {
+                currentStream.getTracks().forEach(track => track.stop());
+            }
+            const constraints = {
+                video: { deviceId: deviceId ? { exact: deviceId } : undefined, width: 1280, height: 720 }
+            };
+            currentStream = await navigator.mediaDevices.getUserMedia(constraints);
+            videoElement.srcObject = currentStream;
+            localStorage.setItem('defaultCameraId', deviceId);
+        }
+
+        // 2. 核心：每帧处理逻辑
+        function tick() {
+            if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
+                scanQRCode();
+            }
+            requestAnimationFrame(tick);
+        }
+
+        function scanQRCode() {
+            const canvas = document.createElement('canvas');
+            canvas.width = videoElement.videoWidth;
+            canvas.height = videoElement.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                inversionAttempts: "dontInvert",
+            });
+
+            if (code && code.data !== "") {
+                // 如果是新二维码，执行处理
+                if (code.data !== lastScannedCode) {
+                    processNewCode(code, canvas);
+                }
+            }
+        }
+
+        async function processNewCode(code, canvas) {
+            lastScannedCode = code.data;
+            
+            // UI 更新
+            qrDataDisplay.innerText = code.data;
+            scanStatus.innerText = "检测到新货物，正在同步...";
+            
+            // 裁剪二维码图像
+            const cropBase64 = cropQRImage(code, canvas);
+            lastQrImg.src = cropBase64;
+            lastQrImg.style.display = 'block';
+            qrPlaceholder.style.display = 'none';
+
+            // 存入数据库
+            const fullImage = canvas.toDataURL('image/jpeg', 0.6);
+            await saveToDatabase(code.data, fullImage, cropBase64);
+        }
+
+        function cropQRImage(code, sourceCanvas) {
+            const loc = code.location;
+            const padding = 30;
+            const minX = Math.min(loc.topLeftCorner.x, loc.bottomLeftCorner.x) - padding;
+            const minY = Math.min(loc.topLeftCorner.y, loc.topRightCorner.y) - padding;
+            const width = Math.max(loc.topRightCorner.x, loc.bottomRightCorner.x) - minX + padding;
+            const height = Math.max(loc.bottomLeftCorner.y, loc.bottomRightCorner.y) - minY + padding;
+
+            const cropCanvas = document.createElement('canvas');
+            cropCanvas.width = 150;
+            cropCanvas.height = 150;
+            const ctx = cropCanvas.getContext('2d');
+            ctx.drawImage(sourceCanvas, minX, minY, width, height, 0, 0, 150, 150);
+            return cropCanvas.toDataURL('image/png');
+        }
+
+        async function saveToDatabase(id, fullImg, qrImg) {
+            try {
+                const response = await fetch('/api/save-record', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        cargoId: id,
+                        quantity: 1, 
+                        location: { x: 0, y: 0, z: 0 },
+                        envImage: fullImg,
+                        qrImage: qrImg
+                    })
+                });
+                const res = await response.json();
+                if(res.success) {
+                    scanStatus.innerText = "已入库 (自动同步完成)";
+                } else {
+                    scanStatus.innerText = "提示: " + (res.message || "已存在记录");
+                }
+            } catch (err) {
+                scanStatus.innerText = "同步失败";
+            }
+        }
+
+        videoSelect.onchange = () => startStream(videoSelect.value);
+        initApp();
+    </script>
+</body>
+</html>
