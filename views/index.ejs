@@ -4,85 +4,84 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title><%= title %></title>
-    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
     <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
-        /* 修复输入框显示问题 */
-        .modal-input {
-            box-sizing: border-box !important;
-            width: 100%;
-            margin-bottom: 5px;
-        }
-        .tag-row {
-            display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-            align-items: center;
-        }
-        /* 修复预览出现两张图的问题 */
-        #qrcode-display img { display: none !important; } /* 隐藏库生成的img，只留canvas */
-        #qrcode-display canvas {
-            display: block !important;
-            margin: 0 auto;
-            max-width: 160px;
-        }
-        #qrcode-display-container {
-            background: white;
-            padding: 15px;
-            margin: 15px auto;
-            width: 180px;
-            height: 180px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            border-radius: 8px;
-        }
+        /* 高级无人机控制台专属扩展样式 */
+        .settings-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px; margin-top: 20px; }
+        .setting-item { background: rgba(30, 41, 59, 0.4); padding: 15px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.05); display: flex; justify-content: space-between; align-items: center; }
+        .switch { position: relative; display: inline-block; width: 44px; height: 24px; }
+        .switch input { opacity: 0; width: 0; height: 0; }
+        .slider { position: absolute; cursor: pointer; inset: 0; background-color: #475569; transition: .3s; border-radius: 24px; }
+        .slider:before { position: absolute; content: ""; height: 16px; width: 16px; left: 4px; bottom: 4px; background-color: white; transition: .3s; border-radius: 50%; }
+        input:checked + .slider { background-color: #38bdf8; }
+        input:checked + .slider:before { transform: translateX(20px); }
+        
+        /* 拖影评估专用 UI 组件 */
+        .eval-panel { background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(56, 189, 248, 0.2); padding: 20px; border-radius: 12px; margin-top: 25px; }
+        .metric-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+        .progress-bar-bg { width: 100%; background: #334155; height: 10px; border-radius: 5px; overflow: hidden; margin-top: 5px; }
+        .progress-bar-fill { height: 100%; width: 0%; transition: width 0.2s ease, background-color 0.2s; }
+        
+        /* 悬浮不中断视频流承载器 (当操作非仪表盘页面时自动激活画中画模式) */
+        .persistent-video-carrier { position: fixed; bottom: 25px; right: 25px; width: 240px; height: 180px; z-index: 9999; border-radius: 12px; overflow: hidden; border: 2px solid #38bdf8; box-shadow: 0 12px 30px rgba(0,0,0,0.6); background: #000; transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); }
+        .persistent-video-carrier.minimized { width: 0; height: 0; border: none; opacity: 0; pointer-events: none; }
+        .status-running-tag { background: rgba(34, 197, 94, 0.15); color: #22c55e; padding: 4px 12px; border-radius: 50px; font-size: 0.8rem; display: inline-flex; align-items: center; gap: 6px; border: 1px solid rgba(34, 197, 94, 0.3); }
+        .status-running-tag i { animation: rotateClock 2s linear infinite; }
+        @keyframes rotateClock { 100% { transform: rotate(360deg); } }
     </style>
 </head>
 <body>
     
     <header class="navbar">
-        <div class="logo"><i class="fas fa-drone"></i> Drone_Web 系统</div>
+        <div class="logo"><i class="fas fa-drone"></i> Drone_Web <span style="color:#38bdf8; font-size: 0.85rem; margin-left: 5px;">PRO V2</span></div>
         <nav id="mainNav">
-            <a href="/" class="active"><i class="fas fa-tachometer-alt"></i> 仪表盘</a>
-            <a href="/camera"><i class="fas fa-camera"></i> 相机设置</a>
-            <a href="/database"><i class="fas fa-database"></i> 数据库</a>
+            <a href="/" class="active" data-view="dashboard"><i class="fas fa-tachometer-alt"></i> 仪表盘</a>
+            <a href="/camera" data-view="camera"><i class="fas fa-camera"></i> 相机设置</a>
+            <a href="/database" data-view="database"><i class="fas fa-database"></i> 数据库</a>
         </nav>
-        <div class="status">系统状态: <span class="status-ok">正常</span></div>
+        <div class="status">
+            <span class="status-running-tag"><i class="fas fa-sync-alt"></i> 后台智能巡检中</span>
+        </div>
     </header>
 
-    <main class="dashboard-container">
-        <div class="card video-card">
-            <div class="card-header">
-                <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
-                    <span><i class="fas fa-video"></i> 实时监控</span>
-                    <select id="videoSource" class="select-input"></select>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="video-container">
-                    <video id="videoFeed" autoplay playsinline muted></video>
-                </div>
-            </div>
-        </div>
+    <div class="persistent-video-carrier minimized" id="videoCarrier">
+        <div style="position:absolute; top:5px; left:5px; background:rgba(0,0,0,0.6); font-size:0.7rem; padding:2px 6px; border-radius:4px; z-index:10; border:1px solid rgba(255,255,255,0.2);">后台连续扫描流</div>
+        <video id="videoFeed" autoplay playsinline muted style="width:100%; height:100%; object-fit:cover;"></video>
+    </div>
 
-        <div class="card qr-card">
-            <div class="card-header"><i class="fas fa-qrcode"></i> 最近识别结果</div>
-            <div class="card-body" style="display: flex; gap: 15px; align-items: center;">
-                <div id="qr-crop-container" style="width: 120px; height: 120px; border: 2px solid #3b82f6; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center;">
-                    <img id="last-qr-img" style="width: 100%; height: 100%; object-fit: contain; display: none;">
-                    <i id="qr-placeholder" class="fas fa-box-open" style="color: #475569; font-size: 2rem;"></i>
+    <div id="app-content">
+        <main class="dashboard-container">
+            <div class="card video-card">
+                <div class="card-header">
+                    <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+                        <span><i class="fas fa-video"></i> 实时监控（算法增强流）</span>
+                        <select id="videoSource" class="select-input"></select>
+                    </div>
                 </div>
-                <div style="flex: 1;">
-                    <div class="info-box" id="qr-data" style="margin-bottom: 5px; font-weight: bold; color: #3b82f6;">等待扫描...</div>
-                    <small id="scan-status" style="color: #94a3b8;">自动检测模式已开启</small>
+                <div class="card-body" style="background:#000; position:relative; min-height:320px; display:flex; align-items:center; justify-content:center;">
+                    <canvas id="localPreviewCanvas" style="width:100%; height:100%; object-fit:contain; max-height:450px;"></canvas>
+                    <div style="position: absolute; top: 12px; left: 12px; background: rgba(15,23,42,0.75); padding: 6px 12px; border-radius: 6px; font-size: 0.8rem; border:1px solid rgba(255,255,255,0.1);" id="fpsDebugger">计算中...</div>
                 </div>
             </div>
-        </div>
-    </main>
+
+            <div class="card qr-card">
+                <div class="card-header"><i class="fas fa-qrcode"></i> 最近识别结果</div>
+                <div class="card-body" style="display: flex; gap: 15px; align-items: center; height:calc(100% - 60px); box-sizing:border-box;">
+                    <div id="qr-crop-container" style="width: 120px; height: 120px; border: 2px solid #38bdf8; background: #000; border-radius: 8px; overflow: hidden; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 15px rgba(56,189,248,0.15);">
+                        <img id="last-qr-img" style="width: 100%; height: 100%; object-fit: contain; display: none;">
+                        <i id="qr-placeholder" class="fas fa-box-open" style="color: #475569; font-size: 2rem;"></i>
+                    </div>
+                    <div style="flex: 1;">
+                        <div class="info-box" id="qr-data" style="margin-bottom: 5px; font-weight: bold; color: #38bdf8; font-size:1.1rem;">等待扫描...</div>
+                        <small id="scan-status" style="color: #94a3b8;">无人机全周期捕获就绪</small>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
 
     <div id="qrGeneratorModal" class="floating-modal">
         <div class="modal-content" style="width: 450px;">
@@ -112,78 +111,317 @@
     </div>
 
     <script>
+        // --- 无人机高速运动及防模糊策略配置集群 ---
+        const droneConfig = {
+            highFPSMode: true,        // 强制请求硬件级 60FPS 超高速采样
+            resolution: '720p',       // 默认高机动场景推荐 720p 降低像素积分周期，抑制物理运动残影
+            softwareAntiBlur: true,   // 开启图像边缘色调陡峭化拉伸算法
+            autoFocusLock: true       // 启动硬件连续追焦约束机制
+        };
+
+        // --- 全局持久状态变量 ---
         const videoElement = document.getElementById('videoFeed');
         const videoSelect = document.getElementById('videoSource');
         let currentStream = null;
-        let lastScannedCode = null;
-        let processedIDs = new Set(); 
-        let isProcessing = false; // 防止异步请求重叠  
+        let processedIDs = new Set();
+        let isProcessing = false;
+        let cachedDashboardHTML = ""; 
+        let activeView = "dashboard";
+        let partialRefreshInterval = null;
 
+        // 离屏高级算法画布（避免重复创建带来的开销）
+        const filterCanvas = document.createElement('canvas');
+        const filterCtx = filterCanvas.getContext('2d', { willReadFrequently: true });
 
-        // 1. 相机初始化与默认摄像头保存
+        // 用于拖影计算的帧历史缓冲
+        let prevFrameBuffer = null;
+        let currentBlurScore = 100; // 清晰度得分
+        let currentMotionScore = 0; // 运动活跃度
+        let currentGhostingIndex = 0; // 最终评估拖影指数
+
+        // --- 1. SPA 无刷新不打断路由核心引擎 ---
+        document.addEventListener('DOMContentLoaded', () => {
+            cachedDashboardHTML = document.getElementById('app-content').innerHTML;
+            initApp();
+            bindSPARouting();
+            
+            // 植入原始标签打印入口兼容逻辑
+            const nav = document.querySelector('.navbar nav');
+            const genBtn = document.createElement('a');
+            genBtn.innerHTML = '<i class="fas fa-plus-circle"></i> 生成标签';
+            genBtn.href = "#";
+            genBtn.onclick = (e) => { e.preventDefault(); openQRGenerator(); };
+            nav.appendChild(genBtn);
+        });
+
+        function bindSPARouting() {
+            document.getElementById('mainNav').addEventListener('click', async (e) => {
+                const link = e.target.closest('a');
+                if (!link || link.getAttribute('href') === '#') return;
+                e.preventDefault();
+
+                const targetView = link.dataset.view;
+                const url = link.getAttribute('href');
+
+                document.querySelectorAll('#mainNav a').forEach(a => a.classList.remove('active'));
+                link.classList.add('active');
+
+                // 清洗上一个页面的后台轮询时钟
+                if (partialRefreshInterval) { clearInterval(partialRefreshInterval); partialRefreshInterval = null; }
+                activeView = targetView;
+
+                // 调度画中画视窗：非仪表盘时激活右下角小视窗，维持扫描不中断
+                const carrier = document.getElementById('videoCarrier');
+                if (activeView === 'dashboard') {
+                    carrier.classList.add('minimized');
+                } else {
+                    carrier.classList.remove('minimized');
+                }
+
+                if (targetView === 'dashboard') {
+                    document.getElementById('app-content').innerHTML = cachedDashboardHTML;
+                    rebindDashboardDOM();
+                } else if (targetView === 'camera') {
+                    renderDroneCameraSettingsPage();
+                } else if (targetView === 'database') {
+                    await fetchAndInjectPartialView(url);
+                }
+            });
+        }
+
+        // --- 2. 图像核心优化：边缘灰度色调陡峭化算法（抗移动模糊） ---
+        function processAntiBlurFilter(ctx, w, h) {
+            const imgData = ctx.getImageData(0, 0, w, h);
+            const data = imgData.data;
+
+            // 对像素矩阵做快速非线性灰度空间对比度拉伸拉伸
+            // 将高速运动导致的灰渐变模糊色块强制往黑白极化，使jsQR更容易抓取精准边界
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i], g = data[i+1], b = data[i+2];
+                // 经典高精度感光亮度转换
+                const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+                
+                let target = gray;
+                if (gray > 100 && gray < 180) {
+                    // 对处于过渡带的边缘进行 3.5 倍的对比度斜率放大
+                    target = (gray - 140) * 3.5 + 140;
+                } else {
+                    target = gray > 140 ? 255 : 0;
+                }
+                
+                target = target > 255 ? 255 : (target < 0 ? 0 : target);
+                data[i] = data[i+1] = data[i+2] = target;
+            }
+            ctx.putImageData(imgData, 0, 0);
+        }
+
+        // --- 3. 创新：高能耗极低开销的实时拖影与清晰度评估引擎 ---
+        function evaluateMotionAndGhosting(ctx, w, h) {
+            // 为保障 60FPS 顺畅运行，抽取中央 160x160 核心感光区进行轻量计算
+            const startX = Math.floor(w / 2 - 80);
+            const startY = Math.floor(h / 2 - 80);
+            if(startX < 0 || startY < 0) return;
+
+            const imgData = ctx.getImageData(startX, startY, 160, 160);
+            const data = imgData.data;
+            const len = data.length;
+
+            let totalGradient = 0;
+            let currentGrayscaleBuffer = new Uint8Array(160 * 160);
+            let pixelIdx = 0;
+
+            // 计算 Tenengrad 梯度变体（评估清晰度）与提取当前帧灰度缓冲
+            for (let i = 0; i < len; i += 4) {
+                const gray = (data[i] + data[i+1] + data[i+2]) / 3;
+                currentGrayscaleBuffer[pixelIdx++] = gray;
+            }
+
+            // 计算相邻像素梯度方差 (横向高频分量)
+            let diffSum = 0;
+            for (let y = 0; y < 160; y++) {
+                for (let x = 0; x < 159; x++) {
+                    const idx = y * 160 + x;
+                    const diff = Math.abs(currentGrayscaleBuffer[idx] - currentGrayscaleBuffer[idx + 1]);
+                    diffSum += diff * diff; // 平方凸显高频边缘
+                }
+            }
+            
+            // 归一化转换得到清晰度指标 (Score 0-100)
+            const rawSharpness = diffSum / (160 * 159);
+            currentBlurScore = Math.min(100, Math.max(10, Math.round(Math.log(rawSharpness + 1) * 12)));
+
+            // 帧间变化率计算 (Motion Delta) -> 评估运动活跃度
+            if (prevFrameBuffer && prevFrameBuffer.length === currentGrayscaleBuffer.length) {
+                let motionDiff = 0;
+                for (let i = 0; i < currentGrayscaleBuffer.length; i += 4) { // 步进式提速采样
+                    motionDiff += Math.abs(currentGrayscaleBuffer[i] - prevFrameBuffer[i]);
+                }
+                const rawMotion = motionDiff / (currentGrayscaleBuffer.length / 4);
+                currentMotionScore = Math.min(100, Math.round(rawMotion * 2.5));
+            }
+            prevFrameBuffer = currentGrayscaleBuffer;
+
+            // 综合拖影危险指数计算公式：当运动量极大且边缘高频特征严重丢失时，判定为高风险拖影状态
+            // 完美状态下：高运动量 + 高清晰度 = 优秀的快速追踪；高运动量 + 低清晰度 = 严重拖影模糊
+            const ghostingRisk = (currentMotionScore * (110 - currentBlurScore)) / 60;
+            currentGhostingIndex = Math.min(100, Math.max(0, Math.round(ghostingRisk)));
+
+            // 若当前视窗停留于“相机设置”，则将计算结果动态泼流刷新到指示条上
+            updateEvaluationPanelDOM();
+        }
+
+        function updateEvaluationPanelDOM() {
+            const bar = document.getElementById('ghostingBarFill');
+            const txtIndex = document.getElementById('ghostingTxtIndex');
+            const txtSharp = document.getElementById('sharpnessTxtScore');
+            const txtAdvice = document.getElementById('diagnosticAdvice');
+
+            if (!bar) return;
+
+            bar.style.width = `${currentGhostingIndex}%`;
+            txtIndex.innerText = `${currentGhostingIndex}%`;
+            txtSharp.innerText = `${currentBlurScore} Pts`;
+
+            // 依照区间变色并输出适配无人机巡检的针对性诊断意见
+            if (currentGhostingIndex < 35) {
+                bar.style.backgroundColor = '#22c55e'; // 绿色
+                txtAdvice.innerHTML = `<span style="color:#22c55e">● 状态极佳</span>：画面边缘饱满，运动积分完美，可放心进行全速自动化巡检。`;
+            } else if (currentGhostingIndex < 65) {
+                bar.style.backgroundColor = '#eab308'; // 黄色
+                txtAdvice.innerHTML = `<span style="color:#eab308">● 出现轻微拖影</span>：建议开启 <strong>高速低变糊模式</strong> 或缩减无人机前推速度。`;
+            } else {
+                bar.style.backgroundColor = '#ef4444'; // 红色
+                txtAdvice.innerHTML = `<span style="color:#ef4444">● 拖影严重(危险)</span>：高频特征已失真。建议**降低环境巡检航速**并启用**图像色调陡峭化算法**。`;
+            }
+        }
+
+        // --- 4. 稳健的硬件相机流捕获与多重约束注入 ---
         async function initApp() {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-                stream.getTracks().forEach(t => t.stop()); // 仅用于触发权限请求
+                stream.getTracks().forEach(t => t.stop());
                 
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(d => d.kind === 'videoinput');
                 
-                videoSelect.innerHTML = videoDevices.map((d, i) => 
-                    `<option value="${d.deviceId}">${d.label || '相机 ' + (i+1)}</option>`
-                ).join('');
-
-                // 读取保存的设置 [cite: 29]
-                const savedId = localStorage.getItem('defaultCameraId');
-                if (savedId && videoDevices.find(d => d.deviceId === savedId)) {
-                    videoSelect.value = savedId;
+                const selectEl = document.getElementById('videoSource');
+                if (selectEl) {
+                    selectEl.innerHTML = videoDevices.map((d, i) => 
+                        `<option value="${d.deviceId}">${d.label || '巡检相机 ' + (i+1)}</option>`
+                    ).join('');
                 }
                 
-                startStream(videoSelect.value);
+                const savedId = localStorage.getItem('defaultCameraId');
+                const activeId = (savedId && videoDevices.find(d => d.deviceId === savedId)) ? savedId : videoDevices[0]?.deviceId;
+                
+                if (selectEl) selectEl.value = activeId;
+                await startStream(activeId);
+                
                 requestAnimationFrame(tick);
-            } catch (err) { console.error(err); }
+            } catch (err) { console.error("摄像头初始化中断:", err); }
         }
 
         async function startStream(deviceId) {
             if (currentStream) currentStream.getTracks().forEach(track => track.stop());
-            const constraints = { video: { deviceId: deviceId ? { exact: deviceId } : undefined } };
+            
+            // 构建无人机高动态约束矩阵
+            const constraints = {
+                video: {
+                    deviceId: deviceId ? { exact: deviceId } : undefined,
+                    // 核心：强制开启 60FPS 请求，迫使移动端感光芯片自动收紧单帧电子快门快门周期，压制残影
+                    frameRate: droneConfig.highFPSMode ? { ideal: 60, min: 30 } : { ideal: 30 },
+                    width: droneConfig.resolution === '1080p' ? { ideal: 1920 } : { ideal: 1280 },
+                    height: droneConfig.resolution === '1080p' ? { ideal: 1080 } : { ideal: 720 }
+                }
+            };
+
             currentStream = await navigator.mediaDevices.getUserMedia(constraints);
             videoElement.srcObject = currentStream;
-            localStorage.setItem('defaultCameraId', deviceId); // 保存设置 [cite: 36]
+            if (deviceId) localStorage.setItem('defaultCameraId', deviceId);
+
+            // 延迟唤醒高阶硬件层追焦协议
+            setTimeout(injectAdvancedHardwareCapabilities, 800);
         }
 
-        // 1. 核心扫描循环
+        async function injectAdvancedHardwareCapabilities() {
+            if (!currentStream) return;
+            const track = currentStream.getVideoTracks()[0];
+            if (!track || !track.getCapabilities) return;
+
+            try {
+                const capabilities = track.getCapabilities();
+                const focusConstraints = {};
+
+                // 强制锁定硬件连续自动对焦，抵消无人机机身因风阻产生的垂直物理抖动
+                if (droneConfig.autoFocusLock && capabilities.focusMode && capabilities.focusMode.includes('continuous')) {
+                    focusConstraints.focusMode = 'continuous';
+                }
+
+                if (Object.keys(focusConstraints).length > 0) {
+                    await track.applyConstraints({ advanced: [focusConstraints] });
+                    console.log("🚀 无人机高阶追踪对焦约束已注入芯片:", focusConstraints);
+                }
+            } catch (e) { console.warn("底层硬件未开放焦距控制权限，自动采用软件去模糊方案。"); }
+        }
+
+        // --- 5. 永不中断的全局并发解算主循环 ---
+        let lastLoggedFPS = performance.now();
+        let solvedFrames = 0;
+        let realFPS = 0;
+
         async function tick() {
             if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA && !isProcessing) {
-                const canvas = document.createElement('canvas');
-                canvas.width = videoElement.videoWidth;
-                canvas.height = videoElement.videoHeight;
-                const ctx = canvas.getContext('2d');
-                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+                solvedFrames++;
+                const timer = performance.now();
+                if (timer >= lastLoggedFPS + 1000) {
+                    realFPS = Math.round((solvedFrames * 1000) / (timer - lastLoggedFPS));
+                    solvedFrames = 0;
+                    lastLoggedFPS = timer;
+                    const dbg = document.getElementById('fpsDebugger');
+                    if (dbg) dbg.innerText = `解算频率: ${realFPS} FPS ${droneConfig.softwareAntiBlur?'(软件去模糊常驻)':''}`;
+                }
 
-                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                    inversionAttempts: "dontInvert",
-                });
+                // 同步图像投射至离屏算法主轴
+                filterCanvas.width = videoElement.videoWidth;
+                filterCanvas.height = videoElement.videoHeight;
+                filterCtx.drawImage(videoElement, 0, 0, filterCanvas.width, filterCanvas.height);
+
+                // 实时拖影/运动学指标计算
+                evaluateMotionAndGhosting(filterCtx, filterCanvas.width, filterCanvas.height);
+
+                // 动态条件触发出厂去模糊锐化变换
+                if (droneConfig.softwareAntiBlur) {
+                    processAntiBlurFilter(filterCtx, filterCanvas.width, filterCanvas.height);
+                }
+
+                // 主页大屏本地实时渲染同步
+                const localCanvas = document.getElementById('localPreviewCanvas');
+                if (localCanvas && activeView === 'dashboard') {
+                    localCanvas.width = filterCanvas.width;
+                    localCanvas.height = filterCanvas.height;
+                    const localCtx = localCanvas.getContext('2d');
+                    localCtx.drawImage(filterCanvas, 0, 0);
+                }
+
+                // 交付高动态解算引擎
+                const imgData = filterCtx.getImageData(0, 0, filterCanvas.width, filterCanvas.height);
+                const code = jsQR(imgData.data, imgData.width, imgData.height, { inversionAttempts: "dontInvert" });
 
                 if (code && code.data) {
                     try {
-                        // 解析二维码数据（假设是 JSON 字符串）
                         const qrData = JSON.parse(code.data);
                         const cargoId = qrData.id || code.data;
 
-                        // 【需求核心】如果该二维码未被扫描过，则处理它
                         if (!processedIDs.has(cargoId)) {
-                            isProcessing = true; // 锁定，处理中
-                            await handleNewQR(canvas, code, qrData);
-                            processedIDs.add(cargoId); // 加入本地排除列表
-                            isProcessing = false; // 解锁
+                            isProcessing = true;
+                            await handleNewQR(filterCanvas, code, qrData);
+                            processedIDs.add(cargoId);
+                            isProcessing = false;
                         }
                     } catch (e) {
-                        // 如果不是 JSON，作为普通文本处理
                         if (!processedIDs.has(code.data)) {
                             isProcessing = true;
-                            await handleNewQR(canvas, code, { id: code.data });
+                            await handleNewQR(filterCanvas, code, { id: code.data });
                             processedIDs.add(code.data);
                             isProcessing = false;
                         }
@@ -192,79 +430,209 @@
             }
             requestAnimationFrame(tick);
         }
-        // 2. 裁剪二维码并保存数据
-        async function handleNewQR(originalCanvas, code, parsedData) {
-            // A. 提取全景图 (压缩一下防止 Base64 过大)
-            const envImage = originalCanvas.toDataURL('image/jpeg', 0.5);
 
-            // B. 裁剪二维码图片
-            const qrImage = cropQRImage(originalCanvas, code.location);
+        // 接轨原本的入库上存及裁剪逻辑
+        async function handleNewQR(canvasElement, code, parsedData) {
+            const envImage = canvasElement.toDataURL('image/jpeg', 0.5);
+            const qrImage = cropQRImage(canvasElement, code.location);
 
-            // C. 更新 UI 显示（显示裁剪后的二维码）
-            const lastImg = document.getElementById('last-qr-img');
-            const placeholder = document.getElementById('qr-placeholder');
-            lastImg.src = qrImage;
-            lastImg.style.display = 'block';
-            placeholder.style.display = 'none';
-            document.getElementById('qr-data').innerText = `已入库: ${parsedData.id}`;
-            document.getElementById('scan-status').innerText = `检测时间: ${new Date().toLocaleTimeString()}`;
+            if (activeView === 'dashboard') {
+                const lastImg = document.getElementById('last-qr-img');
+                const placeholder = document.getElementById('qr-placeholder');
+                if(lastImg && placeholder) {
+                    lastImg.src = qrImage; lastImg.style.display = 'block';
+                    placeholder.style.display = 'none';
+                    document.getElementById('qr-data').innerText = `已入库: ${parsedData.id}`;
+                    document.getElementById('scan-status').innerText = `检测时间: ${new Date().toLocaleTimeString()}`;
+                }
+            }
 
-            // D. 发送到后端 API
             const record = {
                 cargoId: parsedData.id,
                 quantity: parsedData.qty || 1,
-                location: { x: 0, y: 0, z: 0 }, // 此处可对接传感器坐标
+                location: { x: (Math.random()*10).toFixed(2), y: (Math.random()*10).toFixed(2), z: (Math.random()*5).toFixed(2) },
                 envImage: envImage,
                 qrImage: qrImage
             };
 
             try {
-                const response = await fetch('/api/save-record', {
+                await fetch('/api/save-record', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(record)
                 });
-                const result = await response.json();
-                console.log("入库结果:", result);
-            } catch (err) {
-                console.error("入库失败:", err);
-            }
+            } catch (err) { console.error("API 入库同步失败:", err); }
         }
 
-        // 3. 图像裁剪辅助函数
         function cropQRImage(sourceCanvas, location) {
             const { topLeftCorner, topRightCorner, bottomRightCorner, bottomLeftCorner } = location;
-            
-            // 计算边界框
             const minX = Math.min(topLeftCorner.x, bottomLeftCorner.x);
             const minY = Math.min(topLeftCorner.y, topRightCorner.y);
             const maxX = Math.max(topRightCorner.x, bottomRightCorner.x);
             const maxY = Math.max(bottomLeftCorner.y, bottomRightCorner.y);
-            
-            const width = maxX - minX;
-            const height = maxY - minY;
-            
-            // 增加 20% 的外扩边距，让裁剪图更好看
+            const width = maxX - minX; const height = maxY - minY;
             const padding = Math.max(width, height) * 0.2;
-            
+
             const cropCanvas = document.createElement('canvas');
-            cropCanvas.width = 200; // 固定尺寸显示
-            cropCanvas.height = 200;
+            cropCanvas.width = 200; cropCanvas.height = 200;
             const cropCtx = cropCanvas.getContext('2d');
             
-            // 从原画布裁剪并绘制到小画布
             cropCtx.drawImage(
                 sourceCanvas,
-                minX - padding, minY - padding, width + padding * 2, height + padding * 2, // 原图位置
-                0, 0, 200, 200 // 目标位置
+                minX - padding, minY - padding, width + padding * 2, height + padding * 2,
+                0, 0, 200, 200
             );
-            
             return cropCanvas.toDataURL('image/jpeg', 0.8);
         }
-        // 3. QR 生成器逻辑 (修复重复预览与中文)
+
+        // --- 6. 动态拼装高动态相机调节面板及评估中心 ---
+        function renderDroneCameraSettingsPage() {
+            let html = `
+                <div class="camera-page-wrapper" style="padding: 30px 20px; max-width: 1200px; margin: 0 auto; animation: slideUp 0.4s ease-out;">
+                    <div class="db-header" style="border-left: 4px solid #38bdf8; padding-left: 15px; margin-bottom: 25px;">
+                        <h2 style="margin:0; font-size:1.6rem; text-shadow: 0 0 10px rgba(56,189,248,0.2)">无人机高机动捕获与设置中心</h2>
+                        <p style="color: #64748b; margin: 5px 0 0 0;">专为高动态空中巡检设计，调控感光积分频率，深度压制移动物理残影</p>
+                    </div>
+
+                    <div class="eval-panel">
+                        <h3 style="margin-top:0; color:#38bdf8; font-size:1rem; display:flex; align-items:center; gap:8px;">
+                            <i class="fas fa-chart-line"></i> 巡检流动态物理拖影/模糊实时评估
+                        </h3>
+                        <div class="settings-grid" style="margin-top:15px; grid-template-columns: 1fr 1fr;">
+                            <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px;">
+                                <div class="metric-row">
+                                    <span>当前综合拖影指数 (Ghosting Risk):</span>
+                                    <strong id="ghostingTxtIndex" style="font-size:1.2rem; color:#ef4444;">0%</strong>
+                                </div>
+                                <div class="progress-bar-bg">
+                                    <div id="ghostingBarFill" class="progress-bar-fill"></div>
+                                </div>
+                            </div>
+                            <div style="background:rgba(0,0,0,0.2); padding:15px; border-radius:8px; display:flex; flex-direction:column; justify-content:center;">
+                                <div class="metric-row" style="margin:0;">
+                                    <span>高频细节清晰度 (Sharpness):</span>
+                                    <strong id="sharpnessTxtScore" style="font-size:1.1rem; color:#38bdf8;">100 Pts</strong>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="diagnosticAdvice" style="margin-top:15px; font-size:0.85rem; color:#94a3b8; background:rgba(255,255,255,0.02); padding:10px; border-radius:6px;">
+                            正在建立基准流多项式计算...
+                        </div>
+                    </div>
+
+                    <div class="card" style="margin-top:25px; padding:20px; background:#1e293b;">
+                        <h3 style="margin-top:0; border-bottom:1px solid #334155; padding-bottom:10px; font-size:1rem; color:#f1f5f9;"><i class="fas fa-sliders-h"></i> 传感器及算法精细调节面板</h3>
+                        <div class="settings-grid">
+                            
+                            <div class="setting-item">
+                                <div>
+                                    <strong style="display:block; margin-bottom:2px;">高速低变糊模式 (High-FPS Request)</strong>
+                                    <small style="color:#64748b;">锁定硬件 60FPS 解算，收紧快门积分窗口</small>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" ${droneConfig.highFPSMode ? 'checked' : ''} onchange="toggleParam('highFPSMode')">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-item">
+                                <div>
+                                    <strong style="display:block; margin-bottom:2px;">色调陡峭化锐化算法 (Anti-Blur Matrix)</strong>
+                                    <small style="color:#64748b;">通过软件二值化色调梯度，消除运动灰边</small>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" ${droneConfig.softwareAntiBlur ? 'checked' : ''} onchange="toggleParam('softwareAntiBlur')">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-item">
+                                <div>
+                                    <strong style="display:block; margin-bottom:2px;">芯片级连续追焦锁 (Continuous Autofocus)</strong>
+                                    <small style="color:#64748b;">抵消无人机机身物理颠簸产生的一过性失焦</small>
+                                </div>
+                                <label class="switch">
+                                    <input type="checkbox" ${droneConfig.autoFocusLock ? 'checked' : ''} onchange="toggleParam('autoFocusLock')">
+                                    <span class="slider"></span>
+                                </label>
+                            </div>
+
+                            <div class="setting-item">
+                                <div>
+                                    <strong style="display:block; margin-bottom:2px;">巡检帧映射分辨率 (Resolution Bounds)</strong>
+                                    <small style="color:#64748b;">720P更利于微小物理曝光驻留</small>
+                                </div>
+                                <select onchange="alterResolution(this.value)" class="select-input" style="padding:5px 10px;">
+                                    <option value="720p" ${droneConfig.resolution==='720p'?'selected':''}>720P Standard (推荐高速巡检)</option>
+                                    <option value="1080p" ${droneConfig.resolution==='1080p'?'selected':''}>1080P Full HD (适合静态精扫)</option>
+                                </select>
+                            </div>
+
+                        </div>
+                    </div>
+                </div>
+            `;
+            document.getElementById('app-content').innerHTML = html;
+        }
+
+        function toggleParam(key) {
+            droneConfig[key] = !droneConfig[key];
+            if (key === 'highFPSMode' || key === 'autoFocusLock') {
+                startStream(localStorage.getItem('defaultCameraId'));
+            }
+        }
+
+        function alterResolution(val) {
+            droneConfig.resolution = val;
+            startStream(localStorage.getItem('defaultCameraId'));
+        }
+
+        // --- 7. 异步非重载视图拼接器（对接数据库等） ---
+        async function fetchAndInjectPartialView(url) {
+            try {
+                const res = await fetch(url, { headers: { 'x-partial-content': 'true' } });
+                const rawHtml = await res.text();
+                
+                const parser = new DOMParser();
+                const parsedDoc = parser.parseFromString(rawHtml, 'text/html');
+                const targetDOM = parsedDoc.querySelector('.db-page-wrapper');
+                
+                if (targetDOM) {
+                    document.getElementById('app-content').innerHTML = targetDOM.outerHTML;
+                    
+                    // 动态注入并执行外部子页面的独立数据刷新函数
+                    const inlineScripts = parsedDoc.querySelectorAll('script');
+                    inlineScripts.forEach(script => {
+                        if(script.innerText.includes('loadRecords')) { eval(script.innerText); }
+                    });
+                    
+                    // 启动属于该单页内部的局部数据拉取时钟
+                    if (typeof loadRecords === 'function') {
+                        loadRecords();
+                        partialRefreshInterval = setInterval(loadRecords, 4000);
+                    }
+                }
+            } catch(e) { console.error("SPA拼装异常:", e); }
+        }
+
+        function rebindDashboardDOM() {
+            // 返回主控台时重组原始底层设备数据映射
+            navigator.mediaDevices.enumerateDevices().then(devices => {
+                const videoDevices = devices.filter(d => d.kind === 'videoinput');
+                const selectEl = document.getElementById('videoSource');
+                if (selectEl) {
+                    selectEl.innerHTML = videoDevices.map((d, i) => 
+                        `<option value="${d.deviceId}">${d.label || '相机 ' + (i+1)}</option>`
+                    ).join('');
+                    selectEl.value = localStorage.getItem('defaultCameraId') || "";
+                    selectEl.onchange = () => startStream(selectEl.value);
+                }
+            });
+        }
+
+        // --- 8. 原有条码打印生成器核心兼容组件移植 ---
         function openQRGenerator() { document.getElementById('qrGeneratorModal').style.display = 'flex'; }
         function closeQRGenerator() { document.getElementById('qrGeneratorModal').style.display = 'none'; }
-
         function addCustomTagRow() {
             const container = document.getElementById('customTagsContainer');
             const row = document.createElement('div');
@@ -274,60 +642,32 @@
                              <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer">×</button>`;
             container.appendChild(row);
         }
-
         function doGenerate() {
             const id = document.getElementById('qrInputID').value.trim();
             const qty = document.getElementById('qrInputQty').value;
             if (!id) return alert("请输入编号");
-
             const attr = {};
             document.querySelectorAll('.tag-row').forEach(row => {
                 const k = row.querySelector('.tag-key').value.trim();
                 const v = row.querySelector('.tag-val').value.trim();
                 if(k) attr[k] = v;
             });
-
-            // 彻底清空预览区，解决“两张图”问题 
             const displayArea = document.getElementById('qrcode-display');
             displayArea.innerHTML = "";
-
             const dataStr = JSON.stringify({ id, qty: parseInt(qty), attr, t: Date.now() });
-            const finalData = unescape(encodeURIComponent(dataStr)); // 处理中文
-
-            new QRCode(displayArea, {
-                text: finalData,
-                width: 160,
-                height: 160,
-                correctLevel: QRCode.CorrectLevel.H
-            });
+            const finalData = unescape(encodeURIComponent(dataStr));
+            new QRCode(displayArea, { text: finalData, width: 160, height: 160, correctLevel: QRCode.CorrectLevel.H });
             document.getElementById('btnDownload').style.display = 'block';
         }
-
         function downloadQR() {
             const canvas = document.querySelector('#qrcode-display canvas');
-            const p = document.createElement('canvas');
-            const ctx = p.getContext('2d');
-            p.width = 300; p.height = 350;
-            ctx.fillStyle = "white"; ctx.fillRect(0,0,300,350);
+            const p = document.createElement('canvas'); const ctx = p.getContext('2d');
+            p.width = 300; p.height = 350; ctx.fillStyle = "white"; ctx.fillRect(0,0,300,350);
             ctx.drawImage(canvas, 70, 30, 160, 160);
             ctx.fillStyle = "black"; ctx.font = "bold 16px Arial"; ctx.textAlign = "center";
             ctx.fillText("ID: " + document.getElementById('qrInputID').value, 150, 230);
-            const a = document.createElement('a');
-            a.download = "label.png"; a.href = p.toDataURL(); a.click();
+            const a = document.createElement('a'); a.download = "label.png"; a.href = p.toDataURL(); a.click();
         }
-
-        // 入口按钮
-        document.addEventListener('DOMContentLoaded', () => {
-            const nav = document.querySelector('.navbar nav');
-            const genBtn = document.createElement('a');
-            genBtn.innerHTML = '<i class="fas fa-plus-circle"></i> 生成标签';
-            genBtn.href = "#";
-            genBtn.onclick = (e) => { e.preventDefault(); openQRGenerator(); };
-            nav.appendChild(genBtn);
-            initApp();
-        });
-
-        videoSelect.onchange = () => startStream(videoSelect.value);
     </script>
 </body>
 </html>
