@@ -7,12 +7,46 @@
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
     <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        /* 修复输入框显示问题 */
+        .modal-input {
+            box-sizing: border-box !important;
+            width: 100%;
+            margin-bottom: 5px;
+        }
+        .tag-row {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            align-items: center;
+        }
+        /* 修复预览出现两张图的问题 */
+        #qrcode-display img { display: none !important; } /* 隐藏库生成的img，只留canvas */
+        #qrcode-display canvas {
+            display: block !important;
+            margin: 0 auto;
+            max-width: 160px;
+        }
+        #qrcode-display-container {
+            background: white;
+            padding: 15px;
+            margin: 15px auto;
+            width: 180px;
+            height: 180px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 8px;
+        }
+    </style>
 </head>
 <body>
     
     <header class="navbar">
         <div class="logo"><i class="fas fa-drone"></i> Drone_Web 系统</div>
-        <nav>
+        <nav id="mainNav">
             <a href="/" class="active"><i class="fas fa-tachometer-alt"></i> 仪表盘</a>
             <a href="/camera"><i class="fas fa-camera"></i> 相机设置</a>
             <a href="/database"><i class="fas fa-database"></i> 数据库</a>
@@ -21,7 +55,6 @@
     </header>
 
     <main class="dashboard-container">
-        
         <div class="card video-card">
             <div class="card-header">
                 <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
@@ -49,32 +82,50 @@
                 </div>
             </div>
         </div>
-
-        <div class="card db-card">
-            <div class="card-header"><i class="fas fa-chart-line"></i> 传感器历史数据</div>
-            <div class="card-body">
-                <canvas id="dbChart"></canvas>
-            </div>
-        </div>
-
     </main>
 
-    <script src="https://cdn.bootcdn.net/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <div id="qrGeneratorModal" class="floating-modal">
+        <div class="modal-content" style="width: 450px;">
+            <div class="modal-header">
+                <h3><i class="fas fa-qrcode"></i> 标签打印系统</h3>
+                <span class="close-btn" onclick="closeQRGenerator()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div style="display: flex; gap: 10px;">
+                    <div style="flex: 2;">
+                        <label>货物编号 (ID):</label>
+                        <input type="text" id="qrInputID" placeholder="编号" class="modal-input">
+                    </div>
+                    <div style="flex: 1;">
+                        <label>数量:</label>
+                        <input type="number" id="qrInputQty" value="1" class="modal-input">
+                    </div>
+                </div>
+                <label>自定义属性:</label>
+                <div id="customTagsContainer"></div>
+                <button onclick="addCustomTagRow()" class="btn-outline" style="margin: 10px 0;">+ 添加属性</button>
+                <div id="qrcode-display-container"><div id="qrcode-display"></div></div>
+                <button onclick="doGenerate()" class="btn-generate" style="width:100%">生成预览</button>
+                <button onclick="downloadQR()" id="btnDownload" class="btn-download" style="display:none; width:100%; margin-top:10px;">下载图片</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const videoElement = document.getElementById('videoFeed');
         const videoSelect = document.getElementById('videoSource');
-        const qrDataDisplay = document.getElementById('qr-data');
-        const scanStatus = document.getElementById('scan-status');
-        const lastQrImg = document.getElementById('last-qr-img');
-        const qrPlaceholder = document.getElementById('qr-placeholder');
-
         let currentStream = null;
-        let lastScannedCode = null; // 防重复识别开关
+        let lastScannedCode = null;
+        let processedIDs = new Set(); 
+        let isProcessing = false; // 防止异步请求重叠  
 
-        // 1. 初始化相机与设备列表
+
+        // 1. 相机初始化与默认摄像头保存
         async function initApp() {
             try {
-                await navigator.mediaDevices.getUserMedia({ video: true });
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                stream.getTracks().forEach(t => t.stop()); // 仅用于触发权限请求
+                
                 const devices = await navigator.mediaDevices.enumerateDevices();
                 const videoDevices = devices.filter(d => d.kind === 'videoinput');
                 
@@ -82,119 +133,201 @@
                     `<option value="${d.deviceId}">${d.label || '相机 ' + (i+1)}</option>`
                 ).join('');
 
+                // 读取保存的设置 [cite: 29]
                 const savedId = localStorage.getItem('defaultCameraId');
                 if (savedId && videoDevices.find(d => d.deviceId === savedId)) {
                     videoSelect.value = savedId;
                 }
                 
                 startStream(videoSelect.value);
-                // 启动循环扫描
                 requestAnimationFrame(tick);
-            } catch (err) {
-                qrDataDisplay.innerText = "错误: 无法获取相机权限";
-            }
+            } catch (err) { console.error(err); }
         }
 
         async function startStream(deviceId) {
-            if (currentStream) {
-                currentStream.getTracks().forEach(track => track.stop());
-            }
-            const constraints = {
-                video: { deviceId: deviceId ? { exact: deviceId } : undefined, width: 1280, height: 720 }
-            };
+            if (currentStream) currentStream.getTracks().forEach(track => track.stop());
+            const constraints = { video: { deviceId: deviceId ? { exact: deviceId } : undefined } };
             currentStream = await navigator.mediaDevices.getUserMedia(constraints);
             videoElement.srcObject = currentStream;
-            localStorage.setItem('defaultCameraId', deviceId);
+            localStorage.setItem('defaultCameraId', deviceId); // 保存设置 [cite: 36]
         }
 
-        // 2. 核心：每帧处理逻辑
-        function tick() {
-            if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA) {
-                scanQRCode();
+        // 1. 核心扫描循环
+        async function tick() {
+            if (videoElement.readyState === videoElement.HAVE_ENOUGH_DATA && !isProcessing) {
+                const canvas = document.createElement('canvas');
+                canvas.width = videoElement.videoWidth;
+                canvas.height = videoElement.videoHeight;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+
+                const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height, {
+                    inversionAttempts: "dontInvert",
+                });
+
+                if (code && code.data) {
+                    try {
+                        // 解析二维码数据（假设是 JSON 字符串）
+                        const qrData = JSON.parse(code.data);
+                        const cargoId = qrData.id || code.data;
+
+                        // 【需求核心】如果该二维码未被扫描过，则处理它
+                        if (!processedIDs.has(cargoId)) {
+                            isProcessing = true; // 锁定，处理中
+                            await handleNewQR(canvas, code, qrData);
+                            processedIDs.add(cargoId); // 加入本地排除列表
+                            isProcessing = false; // 解锁
+                        }
+                    } catch (e) {
+                        // 如果不是 JSON，作为普通文本处理
+                        if (!processedIDs.has(code.data)) {
+                            isProcessing = true;
+                            await handleNewQR(canvas, code, { id: code.data });
+                            processedIDs.add(code.data);
+                            isProcessing = false;
+                        }
+                    }
+                }
             }
             requestAnimationFrame(tick);
         }
+        // 2. 裁剪二维码并保存数据
+        async function handleNewQR(originalCanvas, code, parsedData) {
+            // A. 提取全景图 (压缩一下防止 Base64 过大)
+            const envImage = originalCanvas.toDataURL('image/jpeg', 0.5);
 
-        function scanQRCode() {
-            const canvas = document.createElement('canvas');
-            canvas.width = videoElement.videoWidth;
-            canvas.height = videoElement.videoHeight;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(videoElement, 0, 0, canvas.width, canvas.height);
+            // B. 裁剪二维码图片
+            const qrImage = cropQRImage(originalCanvas, code.location);
 
-            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-            const code = jsQR(imageData.data, imageData.width, imageData.height, {
-                inversionAttempts: "dontInvert",
-            });
+            // C. 更新 UI 显示（显示裁剪后的二维码）
+            const lastImg = document.getElementById('last-qr-img');
+            const placeholder = document.getElementById('qr-placeholder');
+            lastImg.src = qrImage;
+            lastImg.style.display = 'block';
+            placeholder.style.display = 'none';
+            document.getElementById('qr-data').innerText = `已入库: ${parsedData.id}`;
+            document.getElementById('scan-status').innerText = `检测时间: ${new Date().toLocaleTimeString()}`;
 
-            if (code && code.data !== "") {
-                // 如果是新二维码，执行处理
-                if (code.data !== lastScannedCode) {
-                    processNewCode(code, canvas);
-                }
-            }
-        }
+            // D. 发送到后端 API
+            const record = {
+                cargoId: parsedData.id,
+                quantity: parsedData.qty || 1,
+                location: { x: 0, y: 0, z: 0 }, // 此处可对接传感器坐标
+                envImage: envImage,
+                qrImage: qrImage
+            };
 
-        async function processNewCode(code, canvas) {
-            lastScannedCode = code.data;
-            
-            // UI 更新
-            qrDataDisplay.innerText = code.data;
-            scanStatus.innerText = "检测到新货物，正在同步...";
-            
-            // 裁剪二维码图像
-            const cropBase64 = cropQRImage(code, canvas);
-            lastQrImg.src = cropBase64;
-            lastQrImg.style.display = 'block';
-            qrPlaceholder.style.display = 'none';
-
-            // 存入数据库
-            const fullImage = canvas.toDataURL('image/jpeg', 0.6);
-            await saveToDatabase(code.data, fullImage, cropBase64);
-        }
-
-        function cropQRImage(code, sourceCanvas) {
-            const loc = code.location;
-            const padding = 30;
-            const minX = Math.min(loc.topLeftCorner.x, loc.bottomLeftCorner.x) - padding;
-            const minY = Math.min(loc.topLeftCorner.y, loc.topRightCorner.y) - padding;
-            const width = Math.max(loc.topRightCorner.x, loc.bottomRightCorner.x) - minX + padding;
-            const height = Math.max(loc.bottomLeftCorner.y, loc.bottomRightCorner.y) - minY + padding;
-
-            const cropCanvas = document.createElement('canvas');
-            cropCanvas.width = 150;
-            cropCanvas.height = 150;
-            const ctx = cropCanvas.getContext('2d');
-            ctx.drawImage(sourceCanvas, minX, minY, width, height, 0, 0, 150, 150);
-            return cropCanvas.toDataURL('image/png');
-        }
-
-        async function saveToDatabase(id, fullImg, qrImg) {
             try {
                 const response = await fetch('/api/save-record', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        cargoId: id,
-                        quantity: 1, 
-                        location: { x: 0, y: 0, z: 0 },
-                        envImage: fullImg,
-                        qrImage: qrImg
-                    })
+                    body: JSON.stringify(record)
                 });
-                const res = await response.json();
-                if(res.success) {
-                    scanStatus.innerText = "已入库 (自动同步完成)";
-                } else {
-                    scanStatus.innerText = "提示: " + (res.message || "已存在记录");
-                }
+                const result = await response.json();
+                console.log("入库结果:", result);
             } catch (err) {
-                scanStatus.innerText = "同步失败";
+                console.error("入库失败:", err);
             }
         }
 
+        // 3. 图像裁剪辅助函数
+        function cropQRImage(sourceCanvas, location) {
+            const { topLeftCorner, topRightCorner, bottomRightCorner, bottomLeftCorner } = location;
+            
+            // 计算边界框
+            const minX = Math.min(topLeftCorner.x, bottomLeftCorner.x);
+            const minY = Math.min(topLeftCorner.y, topRightCorner.y);
+            const maxX = Math.max(topRightCorner.x, bottomRightCorner.x);
+            const maxY = Math.max(bottomLeftCorner.y, bottomRightCorner.y);
+            
+            const width = maxX - minX;
+            const height = maxY - minY;
+            
+            // 增加 20% 的外扩边距，让裁剪图更好看
+            const padding = Math.max(width, height) * 0.2;
+            
+            const cropCanvas = document.createElement('canvas');
+            cropCanvas.width = 200; // 固定尺寸显示
+            cropCanvas.height = 200;
+            const cropCtx = cropCanvas.getContext('2d');
+            
+            // 从原画布裁剪并绘制到小画布
+            cropCtx.drawImage(
+                sourceCanvas,
+                minX - padding, minY - padding, width + padding * 2, height + padding * 2, // 原图位置
+                0, 0, 200, 200 // 目标位置
+            );
+            
+            return cropCanvas.toDataURL('image/jpeg', 0.8);
+        }
+        // 3. QR 生成器逻辑 (修复重复预览与中文)
+        function openQRGenerator() { document.getElementById('qrGeneratorModal').style.display = 'flex'; }
+        function closeQRGenerator() { document.getElementById('qrGeneratorModal').style.display = 'none'; }
+
+        function addCustomTagRow() {
+            const container = document.getElementById('customTagsContainer');
+            const row = document.createElement('div');
+            row.className = 'tag-row';
+            row.innerHTML = `<input type="text" placeholder="键" class="tag-key modal-input" style="flex:1">
+                             <input type="text" placeholder="值" class="tag-val modal-input" style="flex:1">
+                             <button onclick="this.parentElement.remove()" style="color:red; background:none; border:none; cursor:pointer">×</button>`;
+            container.appendChild(row);
+        }
+
+        function doGenerate() {
+            const id = document.getElementById('qrInputID').value.trim();
+            const qty = document.getElementById('qrInputQty').value;
+            if (!id) return alert("请输入编号");
+
+            const attr = {};
+            document.querySelectorAll('.tag-row').forEach(row => {
+                const k = row.querySelector('.tag-key').value.trim();
+                const v = row.querySelector('.tag-val').value.trim();
+                if(k) attr[k] = v;
+            });
+
+            // 彻底清空预览区，解决“两张图”问题 
+            const displayArea = document.getElementById('qrcode-display');
+            displayArea.innerHTML = "";
+
+            const dataStr = JSON.stringify({ id, qty: parseInt(qty), attr, t: Date.now() });
+            const finalData = unescape(encodeURIComponent(dataStr)); // 处理中文
+
+            new QRCode(displayArea, {
+                text: finalData,
+                width: 160,
+                height: 160,
+                correctLevel: QRCode.CorrectLevel.H
+            });
+            document.getElementById('btnDownload').style.display = 'block';
+        }
+
+        function downloadQR() {
+            const canvas = document.querySelector('#qrcode-display canvas');
+            const p = document.createElement('canvas');
+            const ctx = p.getContext('2d');
+            p.width = 300; p.height = 350;
+            ctx.fillStyle = "white"; ctx.fillRect(0,0,300,350);
+            ctx.drawImage(canvas, 70, 30, 160, 160);
+            ctx.fillStyle = "black"; ctx.font = "bold 16px Arial"; ctx.textAlign = "center";
+            ctx.fillText("ID: " + document.getElementById('qrInputID').value, 150, 230);
+            const a = document.createElement('a');
+            a.download = "label.png"; a.href = p.toDataURL(); a.click();
+        }
+
+        // 入口按钮
+        document.addEventListener('DOMContentLoaded', () => {
+            const nav = document.querySelector('.navbar nav');
+            const genBtn = document.createElement('a');
+            genBtn.innerHTML = '<i class="fas fa-plus-circle"></i> 生成标签';
+            genBtn.href = "#";
+            genBtn.onclick = (e) => { e.preventDefault(); openQRGenerator(); };
+            nav.appendChild(genBtn);
+            initApp();
+        });
+
         videoSelect.onchange = () => startStream(videoSelect.value);
-        initApp();
     </script>
 </body>
 </html>

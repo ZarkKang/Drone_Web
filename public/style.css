@@ -20,3 +20,117 @@ body { background: var(--bg); color: var(--text); font-family: sans-serif; margi
 .btn-control-main { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: 0.3s; }
 .btn-control-main:hover { opacity: 0.8; }
 .btn-control-main:disabled { background: #475569; }
+
+/* 漂浮窗口背景 */
+.floating-modal {
+    display: none; /* 默认隐藏 */
+    position: fixed;
+    z-index: 2000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(15, 23, 42, 0.9); /* 深色半透明 */
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px); /* 背景模糊效果 */
+}
+
+/* 窗口主体 */
+.modal-content {
+    background: #1e293b;
+    border: 1px solid #38bdf8;
+    border-radius: 16px;
+    width: 400px;
+    padding: 20px;
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
+}
+
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
+.modal-header h3 { color: #38bdf8; margin: 0; }
+.close-btn { color: #94a3b8; font-size: 28px; cursor: pointer; }
+.close-btn:hover { color: #f43f5e; }
+
+.modal-input {
+    width: 100%;
+    padding: 12px;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    color: white;
+    margin-top: 8px;
+}
+
+#qrcode-display {
+    background: white;
+    padding: 15px;
+    width: 160px;
+    height: 160px;
+    margin: 25px auto;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+}
+
+.btn-generate {
+    width: 100%;
+    padding: 12px;
+    background: #38bdf8;
+    color: #0f172a;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.modal-tip { color: #94a3b8; font-size: 0.8rem; text-align: center; }
+
+.input-row { display: flex; justify-content: space-between; }
+.btn-outline {
+    background: transparent;
+    border: 1px dashed #38bdf8;
+    color: #38bdf8;
+    padding: 5px 10px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+}
+.tag-row { display: flex; gap: 5px; margin-top: 5px; }
+.tag-row input { flex: 1; padding: 8px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px; font-size: 0.8rem; }
+.btn-remove { color: #f43f5e; background: none; border: none; cursor: pointer; }
+
+#qrcode-display-container {
+    background: white;
+    padding: 20px;
+    margin: 20px auto;
+    width: 200px; /* 增加容器宽度 [cite: 21] */
+    min-height: 200px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+#qrcode-display {
+    background: white; /* 确保二维码背景是白色 */
+    padding: 10px;
+    display: inline-block;
+    min-width: 160px;
+    min-height: 160px;
+}
+
+#qrcode-display canvas, #qrcode-display img {
+    display: block !important;
+}
+
+.btn-download {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px;
+    background: #10b981;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+}
+.modal-actions { margin-top: 20px; }
