@@ -4,359 +4,309 @@
     --primary: #38bdf8;
     --accent: #f43f5e;
     --text: #f1f5f9;
-}
-body { background: var(--bg); color: var(--text); font-family: sans-serif; margin: 0; }
-.navbar { background: var(--card); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; }
-.navbar nav a { color: #94a3b8; text-decoration: none; margin-left: 20px; }
-.navbar nav a.active { color: var(--primary); font-weight: bold; }
-.dashboard-container { padding: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(400px, 1fr)); grid-gap: 20px; }
-.card { background: var(--card); border-radius: 12px; overflow: hidden; box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1); }
-.card-header { padding: 15px; background: rgba(255,255,255,0.03); display: flex; justify-content: space-between; border-bottom: 1px solid #334155; }
-.card-body { padding: 20px; }
-.video-container { width: 100%; height: 300px; background: #000; border-radius: 8px; }
-#videoFeed { width: 100%; height: 100%; object-fit: cover; }
-.select-input { background: #0f172a; color: var(--primary); border: 1px solid var(--primary); border-radius: 4px; }
-.info-box { background: #0f172a; padding: 15px; border-radius: 8px; color: #22c55e; font-family: monospace; margin-bottom: 20px; }
-.btn-control-main { width: 100%; padding: 15px; background: var(--accent); color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 1rem; transition: 0.3s; }
-.btn-control-main:hover { opacity: 0.8; }
-.btn-control-main:disabled { background: #475569; }
-
-/* 漂浮窗口背景 */
-.floating-modal {
-    display: none; /* 默认隐藏 */
-    position: fixed;
-    z-index: 2000;
-    left: 0;
-    top: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(15, 23, 42, 0.9); /* 深色半透明 */
-    justify-content: center;
-    align-items: center;
-    backdrop-filter: blur(5px); /* 背景模糊效果 */
-}
-
-/* 窗口主体 */
-.modal-content {
-    background: #1e293b;
-    border: 1px solid #38bdf8;
-    border-radius: 16px;
-    width: 400px;
-    padding: 20px;
-    box-shadow: 0 0 20px rgba(56, 189, 248, 0.3);
-}
-
-.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
-.modal-header h3 { color: #38bdf8; margin: 0; }
-.close-btn { color: #94a3b8; font-size: 28px; cursor: pointer; }
-.close-btn:hover { color: #f43f5e; }
-
-.modal-input {
-    width: 100%;
-    padding: 12px;
-    background: #0f172a;
-    border: 1px solid #334155;
-    border-radius: 8px;
-    color: white;
-    margin-top: 8px;
-}
-
-#qrcode-display {
-    background: white;
-    padding: 15px;
-    width: 160px;
-    height: 160px;
-    margin: 25px auto;
-    border-radius: 8px;
-    display: flex;
-    justify-content: center;
-}
-
-.btn-generate {
-    width: 100%;
-    padding: 12px;
-    background: #38bdf8;
-    color: #0f172a;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.modal-tip { color: #94a3b8; font-size: 0.8rem; text-align: center; }
-
-.input-row { display: flex; justify-content: space-between; }
-.btn-outline {
-    background: transparent;
-    border: 1px dashed #38bdf8;
-    color: #38bdf8;
-    padding: 5px 10px;
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.8rem;
-}
-.tag-row { display: flex; gap: 5px; margin-top: 5px; }
-.tag-row input { flex: 1; padding: 8px; background: #0f172a; border: 1px solid #334155; color: white; border-radius: 4px; font-size: 0.8rem; }
-.btn-remove { color: #f43f5e; background: none; border: none; cursor: pointer; }
-
-#qrcode-display-container {
-    background: white;
-    padding: 20px;
-    margin: 20px auto;
-    width: 200px; /* 增加容器宽度 [cite: 21] */
-    min-height: 200px;
-    border-radius: 10px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-}
-
-#qrcode-display {
-    background: white; /* 确保二维码背景是白色 */
-    padding: 10px;
-    display: inline-block;
-    min-width: 160px;
-    min-height: 160px;
-}
-
-#qrcode-display canvas, #qrcode-display img {
-    display: block !important;
-}
-
-.btn-download {
-    width: 100%;
-    margin-top: 10px;
-    padding: 12px;
-    background: #10b981;
-    color: white;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
-    cursor: pointer;
-}
-.modal-actions { margin-top: 20px; }
-
-#app-content {
-    transition: opacity 0.3s ease;
-}
-/* 当页面正在加载时可以给内容区加个半透明效果 */
-.loading #app-content {
-    opacity: 0.5;
-<<<<<<< HEAD
-}
-
-/* --- 补充：不间断动态流与画中画悬浮窗样式 --- */
-.nav-link {
-    transition: all 0.25s ease;
-    border-bottom: 2px solid transparent;
-    padding-bottom: 4px;
-}
-.nav-link.active {
-    color: var(--primary) !important;
-    border-bottom-color: var(--primary);
-}
-
-/* 局部动画：平滑上浮加载 */
-.camera-page-wrapper {
-    animation: slideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-@keyframes slideUp {
-    from { opacity: 0; transform: translateY(15px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-/* ==================== 智能数据中心专属样式（补丁） ==================== */
-:root {
     --glass-bg: rgba(30, 41, 59, 0.7);
     --glass-border: rgba(255, 255, 255, 0.1);
     --primary-glow: rgba(56, 189, 248, 0.5);
 }
 
-/* 页面包裹器 */
-.db-page-wrapper {
-    padding: 40px 20px;
-    max-width: 1300px;
-    margin: 0 auto;
-    animation: slideUp 0.6s ease-out;
+body { 
+    background: var(--bg); 
+    color: var(--text); 
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+    margin: 0; 
 }
 
-/* 顶部装饰栏 */
-.db-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-end;
-    margin-bottom: 30px;
-    border-left: 4px solid var(--primary);
-    padding-left: 20px;
-}
+/* 导航系统 */
+.navbar { background: var(--card); padding: 1rem 2rem; display: flex; justify-content: space-between; align-items: center; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.navbar .logo { font-weight: 800; font-size: 1.2rem; letter-spacing: 1px; color: var(--text); }
+.navbar .logo span { color: var(--primary); }
+.navbar nav a { color: #94a3b8; text-decoration: none; margin-left: 20px; font-size: 0.95rem; transition: color 0.3s; }
+.navbar nav a:hover, .navbar nav a.active { color: var(--primary); font-weight: bold; }
 
-.title-section h2 { 
-    margin: 0;
-    font-size: 2rem; 
-    letter-spacing: 1px;
-    text-shadow: 0 0 15px var(--primary-glow);
-}
+/* 仪表盘框架排版 */
+.dashboard-container { padding: 30px; display: grid; grid-template-columns: repeat(auto-fit, minmax(450px, 1fr)); grid-gap: 30px; }
+.card { background: var(--card); border-radius: 16px; overflow: hidden; box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3); border: 1px solid rgba(255,255,255,0.02); }
+.card-header { padding: 18px 22px; background: rgba(255,255,255,0.02); display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #334155; font-weight: bold; }
+.card-body { padding: 25px; }
 
-.control-section { 
-    display: flex;
-    align-items: center; 
-    gap: 25px; 
-}
+/* 状态信号灯 */
+.status-indicator { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: #10b981; }
+.status-indicator .dot { width: 8px; height: 8px; background: #10b981; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px #10b981; }
 
-/* 统计徽章 */
-.stat-badge {
-    background: var(--glass-bg);
-    border: 1px solid var(--glass-border);
-    padding: 8px 20px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-    color: var(--text);
-}
-.stat-badge .count { 
-    color: var(--primary);
-    font-weight: 800; 
-    font-size: 1.2rem;
-    font-family: 'JetBrains Mono', monospace;
-}
+/* 浮动打印弹窗组件 */
+.floating-modal { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); display: flex; justify-content: center; align-items: center; z-index: 1000; }
+/* ==========================================================================
+   标签弹窗专属美化（带 tag- 前缀，绝对不污染扫描功能）
+   ========================================================================== */
 
-/* 磨砂玻璃表格卡片 */
-.db-card {
-    background: var(--glass-bg);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid var(--glass-border);
-    border-radius: 20px;
-    overflow: hidden;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-}
-
-.db-card table { 
-    width: 100%; 
-    border-collapse: collapse;
-}
-
-.db-card thead th {
-    background: rgba(15, 23, 42, 0.6);
-    padding: 18px 25px;
-    text-align: left;
-    color: #94a3b8;
-    font-size: 0.8rem;
-    text-transform: uppercase;
-    letter-spacing: 2px;
-    border-bottom: 2px solid var(--glass-border);
-}
-
-.db-card tbody tr { 
-    transition: all 0.3s;
-    border-bottom: 1px solid rgba(255,255,255,0.03); 
-}
-
-.db-card tbody tr:hover { 
-    background: rgba(56, 189, 248, 0.04);
-    transform: scale(1.002);
-}
-
-.db-card td { 
-    padding: 16px 25px; 
-    vertical-align: middle;
-}
-
-/* 货物ID胶囊标签 */
-.id-pill {
-    background: linear-gradient(135deg, #0f172a, #1e293b);
-    color: var(--primary);
-    padding: 6px 14px;
-    border-radius: 8px;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.9rem;
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    display: inline-block;
-    box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
-}
-
-/* ⚡ 核心修复：图像预览外包框尺寸约束 ⚡ */
-.img-wrapper {
-    width: 110px !important;
-    height: 65px !important;
-    border-radius: 10px;
-    overflow: hidden;
-    cursor: pointer;
-    position: relative;
-    border: 1px solid var(--glass-border);
-    transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-}
-
-.img-wrapper img { 
-    width: 100% !important;
-    height: 100% !important;
-    object-fit: cover !important; 
-}
-
-.img-wrapper:hover {
-    transform: scale(1.15) rotate(2deg);
-    z-index: 10;
-    box-shadow: 0 10px 20px rgba(0,0,0,0.4);
-    border-color: var(--primary);
-}
-
-.img-wrapper::after {
-    content: '\f00e';
-    font-family: 'Font Awesome 6 Free'; 
-    font-weight: 900;
-    position: absolute; 
-    inset: 0; 
-    background: rgba(56, 189, 248, 0.2);
-    display: flex; 
-    align-items: center;
+.tag-custom-modal { 
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.8) !important;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: none; /* 默认隐藏，不阻塞下层的摄像头画面 */
     justify-content: center;
-    opacity: 0; 
-    transition: 0.3s;
-}
-.img-wrapper:hover::after { 
-    opacity: 1;
+    align-items: center;
+    z-index: 9999; /* 仅在显示时凌驾于大屏之上 */
 }
 
-/* 删除按钮 */
-.btn-del {
-    width: 38px;
-    height: 38px;
-    border-radius: 10px;
-    border: 1px solid rgba(244, 63, 94, 0.2);
-    background: rgba(244, 63, 94, 0.1);
-    color: #f43f5e;
-    cursor: pointer;
-    transition: 0.3s;
-}
-.btn-del:hover {
-    background: #f43f5e;
-    color: white;
-    box-shadow: 0 0 15px rgba(244, 63, 94, 0.4);
+.tag-modal-content {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98)) !important;
+    border: 1px solid rgba(56, 189, 248, 0.25) !important;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.6), 0 0 30px rgba(56, 189, 248, 0.15) !important;
+    border-radius: 16px !important;
+    padding: 30px;
+    width: 90%;
+    max-width: 400px;
+    position: relative;
+    color: #f1f5f9;
 }
 
-/* 新增行闪烁动效 */
-.new-row-flash {
-    animation: flashCyan 2s;
+.tag-modal-content h3 {
+    margin-top: 0; margin-bottom: 20px;
+    font-size: 1.25rem; color: #38bdf8;
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08); padding-bottom: 12px;
 }
+
+.tag-modal-close {
+    position: absolute; top: 20px; right: 20px;
+    background: none; border: none; color: #94a3b8; font-size: 1.2rem; cursor: pointer; transition: 0.2s;
+}
+.tag-modal-close:hover { color: #f43f5e; transform: rotate(90deg); }
+
+.tag-modal-input-group { margin-bottom: 18px; }
+.tag-modal-input-group label { display: block; font-size: 0.85rem; color: #94a3b8; margin-bottom: 6px; }
+
+.tag-modal-input {
+    box-sizing: border-box !important; width: 100%; padding: 11px 14px;
+    background: rgba(15, 23, 42, 0.6) !important; border: 1px solid #334155 !important;
+    color: #ffffff !important; border-radius: 8px !important; font-size: 0.9rem;
+}
+.tag-modal-input:focus { outline: none; border-color: #38bdf8 !important; box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important; }
+
+/* 专门给二维码预留的纯白安全识别区 */
+#tag-qrcode-container {
+    background: #ffffff !important;
+    padding: 16px !important;
+    margin: 20px auto;
+    width: 160px; height: 160px;
+    border-radius: 12px;
+    display: flex; justify-content: center; align-items: center;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.tag-modal-actions { display: flex; gap: 12px; margin-top: 24px; }
+.tag-btn { flex: 1; padding: 10px 16px; border-radius: 8px; font-size: 0.9rem; font-weight: 600; cursor: pointer; border: none; display: flex; align-items: center; justify-content: center; gap: 8px; transition: 0.2s; }
+.tag-btn-primary { background: linear-gradient(135deg, #38bdf8, #0284c7); color: #0f172a; }
+.tag-btn-primary:hover { box-shadow: 0 0 15px rgba(56, 189, 248, 0.4); transform: translateY(-1px); }
+.tag-btn-secondary { background: rgba(51, 65, 85, 0.5); color: #94a3b8; }
+.tag-btn-secondary:hover { background: rgba(51, 65, 85, 0.8); color: #fff; }.close-btn { font-size: 1.5rem; color: #64748b; transition: color 0.2s; }
+.close-btn:hover { color: #f43f5e; }
+.btn-outline { background: transparent; border: 1px dashed #38bdf8; color: #38bdf8; padding: 10px; border-radius: 8px; font-weight: 500; font-size: 0.85rem; transition: all 0.2s; }
+.btn-outline:hover { background: rgba(56, 189, 248, 0.05); }
+
+/* ==================== 数据中心页面专属样式集 ==================== */
+.db-page-wrapper { padding: 40px 20px; max-width: 1300px; margin: 0 auto; }
+.db-header { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 30px; border-left: 4px solid var(--primary); padding-left: 20px; }
+.db-header h2 { margin: 0; font-size: 1.8rem; text-shadow: 0 0 15px var(--primary-glow); }
+.control-section { display: flex; align-items: center; gap: 25px; }
+
+/* 计数徽章 */
+.stat-badge { background: var(--glass-bg); border: 1px solid var(--glass-border); padding: 8px 20px; border-radius: 12px; display: flex; align-items: center; gap: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.2); color: var(--text); }
+.stat-badge .count { color: var(--primary); font-weight: 800; font-size: 1.2rem; font-family: monospace; }
+
+/* 毛玻璃数据图卡结构 */
+.db-card { background: var(--glass-bg); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); border: 1px solid var(--glass-border); border-radius: 20px; overflow: hidden; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5); }
+.db-card table { width: 100%; border-collapse: collapse; }
+.db-card thead th { background: rgba(15, 23, 42, 0.6); padding: 18px 25px; text-align: left; color: #94a3b8; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 2px solid var(--glass-border); }
+.db-card tbody tr { transition: all 0.3s; border-bottom: 1px solid rgba(255,255,255,0.03); }
+.db-card tbody tr:hover { background: rgba(56, 189, 248, 0.04); transform: scale(1.001); }
+.db-card td { padding: 16px 25px; vertical-align: middle; }
+
+/* 货物ID胶囊样式 */
+.id-pill { background: linear-gradient(135deg, #0f172a, #1e293b); color: var(--primary); padding: 6px 14px; border-radius: 8px; font-family: monospace; font-size: 0.9rem; border: 1px solid rgba(56, 189, 248, 0.3); display: inline-block; box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+
+/* ⚡ 核心修复：物理图片尺寸强控制沙盒 ⚡ */
+.img-wrapper { width: 110px !important; height: 65px !important; border-radius: 10px; overflow: hidden; cursor: pointer; position: relative; border: 1px solid var(--glass-border); transition: 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.1); }
+.img-wrapper img { width: 100% !important; height: 100% !important; object-fit: cover !important; }
+.img-wrapper:hover { transform: scale(1.1) rotate(1deg); z-index: 10; box-shadow: 0 10px 20px rgba(0,0,0,0.4); border-color: var(--primary); }
+
+/* 数据注销按钮 */
+.btn-del { width: 38px; height: 38px; border-radius: 10px; border: 1px solid rgba(244, 63, 94, 0.2); background: rgba(244, 63, 94, 0.1); color: #f43f5e; cursor: pointer; transition: 0.3s; display: flex; align-items: center; justify-content: center; }
+.btn-del:hover { background: #f43f5e; color: white; box-shadow: 0 0 15px rgba(244, 63, 94, 0.4); }
+
+/* 高级全屏全景查看灯箱 */
+.modal { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 9999; justify-content: center; align-items: center; backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); cursor: zoom-out; }
+
+/* 动态首行微渐变入库光流 */
+.new-row-flash { animation: flashCyan 1.5s ease-out; }
 @keyframes flashCyan {
-    0% { background: rgba(56, 189, 248, 0.2); }
+    0% { background: rgba(56, 189, 248, 0.25); }
     100% { background: transparent; }
 }
 
-/* 预览大图弹窗 */
-.modal {
-    display: none;
+/* ==========================================================================
+   生成标签弹窗 (Modal) 高级科技风美化
+   ========================================================================== */
+
+/* 弹窗遮罩层：加入毛玻璃模糊效果 */
+.modal-backdrop, 
+#qrcode-modal-id, /* 对应你实际的弹窗ID，如果是通过通用类控制请用类名 */
+.modal { 
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.9);
-    z-index: 9999;
+    background: rgba(15, 23, 42, 0.75) !important; /* 深色半透明 */
+    backdrop-filter: blur(8px); /* 关键：毛玻璃模糊 */
+    -webkit-backdrop-filter: blur(8px);
+    display: none; /* 默认隐藏，JS控制显示时建议设为 flex */
     justify-content: center;
     align-items: center;
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    cursor: zoom-out;
-=======
->>>>>>> c5d32dfa1d38c7607af85589636a70a7ad6322e1
+    z-index: 999;
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* 弹窗主体外壳 */
+.modal-content {
+    background: linear-gradient(135deg, rgba(30, 41, 59, 0.9), rgba(15, 23, 42, 0.95)) !important;
+    border: 1px solid rgba(56, 189, 248, 0.2) !important; /* 青蓝色微光边框 */
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5), 
+                0 0 30px rgba(56, 189, 248, 0.15) !important; /* 外发光 */
+    border-radius: 16px !important;
+    padding: 30px;
+    width: 90%;
+    max-width: 420px;
+    position: relative;
+    color: #f1f5f9;
+    animation: modalSlideUp 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 弹窗标题 */
+.modal-content h3 {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.3rem;
+    font-weight: 600;
+    color: #38bdf8; /* 青蓝色激活色 */
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding-bottom: 12px;
+}
+
+/* 关闭按钮 (右上角 X) */
+.modal-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: none;
+    color: #94a3b8;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.modal-close:hover {
+    color: #f43f5e; /* 悬浮变红 */
+    transform: rotate(90deg);
+}
+
+/* 输入框行项布局 */
+.modal-input-group {
+    margin-bottom: 16px;
+}
+.modal-input-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #94a3b8;
+    margin-bottom: 6px;
+}
+
+/* 修复并美化输入框 */
+.modal-input {
+    box-sizing: border-box !important;
+    width: 100%;
+    padding: 10px 14px;
+    background: rgba(15, 23, 42, 0.6) !important;
+    border: 1px solid #334155 !important;
+    color: #ffffff !important;
+    border-radius: 8px !important;
+    font-size: 0.9rem;
+    transition: all 0.25s ease;
+}
+.modal-input:focus {
+    outline: none;
+    border-color: #38bdf8 !important;
+    box-shadow: 0 0 0 3px rgba(56, 189, 248, 0.2) !important;
+}
+
+/* 二维码展示区域容器 */
+#qrcode-display-container {
+    background: #ffffff !important; /* 二维码识别必须纯白背景 */
+    padding: 15px;
+    margin: 20px auto;
+    width: 160px;
+    height: 160px;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 操作操作按钮集群 */
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    margin-top: 24px;
+}
+
+.modal-btn {
+    flex: 1;
+    padding: 10px 16px;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    border: none;
+}
+
+/* 主要动作按钮（生成/下载） */
+.modal-btn-primary {
+    background: linear-gradient(135deg, #38bdf8, #0284c7);
+    color: #0f172a;
+}
+.modal-btn-primary:hover {
+    box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+    transform: translateY(-1px);
+}
+
+/* 次要动作按钮（取消/关闭） */
+.modal-btn-secondary {
+    background: rgba(51, 65, 85, 0.5);
+    color: #94a3b8;
+    border: 1px solid rgba(255,255,255,0.05);
+}
+.modal-btn-secondary:hover {
+    background: rgba(51, 65, 85, 0.8);
+    color: #fff;
+}
+
+/* --- 动画效果 --- */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+@keyframes modalSlideUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
 }
