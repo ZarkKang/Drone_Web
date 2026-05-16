@@ -141,6 +141,7 @@ body { background: var(--bg); color: var(--text); font-family: sans-serif; margi
 /* 当页面正在加载时可以给内容区加个半透明效果 */
 .loading #app-content {
     opacity: 0.5;
+<<<<<<< HEAD
 }
 
 /* --- 补充：不间断动态流与画中画悬浮窗样式 --- */
@@ -356,4 +357,6 @@ body { background: var(--bg); color: var(--text); font-family: sans-serif; margi
     backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
     cursor: zoom-out;
+=======
+>>>>>>> c5d32dfa1d38c7607af85589636a70a7ad6322e1
 }

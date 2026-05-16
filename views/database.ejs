@@ -5,19 +5,201 @@
     <title><%= title %></title>
     <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/style.css">
+<<<<<<< HEAD
+=======
+    <style>
+        /* --- 核心美化 CSS --- */
+        :root {
+            --glass-bg: rgba(30, 41, 59, 0.7);
+            --glass-border: rgba(255, 255, 255, 0.1);
+            --primary-glow: rgba(56, 189, 248, 0.5);
+        }
+
+        body {
+            background: radial-gradient(circle at top right, #1e293b, #0f172a);
+            min-height: 100vh;
+        }
+
+        .db-page-wrapper {
+            padding: 40px 20px;
+            max-width: 1300px;
+            margin: 0 auto;
+            animation: slideUp 0.6s ease-out;
+        }
+
+        /* 顶部装饰栏 */
+        .db-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-end;
+            margin-bottom: 30px;
+            border-left: 4px solid var(--primary);
+            padding-left: 20px;
+        }
+
+        .title-section h2 { 
+            margin: 0; 
+            font-size: 2rem; 
+            letter-spacing: 1px;
+            text-shadow: 0 0 15px var(--primary-glow);
+        }
+        
+        .control-section { display: flex; align-items: center; gap: 25px; }
+
+        /* 统计卡片 */
+        .stat-badge {
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            padding: 8px 20px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        .stat-badge .count { 
+            color: var(--primary); 
+            font-weight: 800; 
+            font-size: 1.2rem;
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* 表格容器 - 磨砂玻璃效果 */
+        .db-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(12px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+
+        table { width: 100%; border-collapse: collapse; }
+        
+        thead th {
+            background: rgba(15, 23, 42, 0.6);
+            padding: 18px 25px;
+            text-align: left;
+            color: #94a3b8;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            border-bottom: 2px solid var(--glass-border);
+        }
+
+        tbody tr { 
+            transition: all 0.3s; 
+            border-bottom: 1px solid rgba(255,255,255,0.03); 
+        }
+
+        tbody tr:hover { 
+            background: rgba(56, 189, 248, 0.04);
+            transform: scale(1.002);
+        }
+
+        td { padding: 16px 25px; vertical-align: middle; }
+
+        /* 货物ID 样式 */
+        .id-pill {
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            color: var(--primary);
+            padding: 6px 14px;
+            border-radius: 8px;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.9rem;
+            border: 1px solid rgba(56, 189, 248, 0.3);
+            display: inline-block;
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.3);
+        }
+
+        /* 图像预览卡片 */
+        .img-wrapper {
+            width: 110px;
+            height: 65px;
+            border-radius: 10px;
+            overflow: hidden;
+            cursor: pointer;
+            position: relative;
+            border: 1px solid var(--glass-border);
+            transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        
+        .img-wrapper img { width: 100%; height: 100%; object-fit: cover; }
+        
+        .img-wrapper:hover {
+            transform: scale(1.15) rotate(2deg);
+            z-index: 10;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.4);
+            border-color: var(--primary);
+        }
+
+        .img-wrapper::after {
+            content: '\f00e'; font-family: 'Font Awesome 6 Free'; font-weight: 900;
+            position: absolute; inset: 0; background: rgba(56, 189, 248, 0.2);
+            display: flex; align-items: center; justify-content: center;
+            opacity: 0; transition: 0.3s;
+        }
+        .img-wrapper:hover::after { opacity: 1; }
+
+        /* 操作按钮 */
+        .btn-del {
+            width: 38px; height: 38px;
+            border-radius: 10px;
+            border: 1px solid rgba(244, 63, 94, 0.2);
+            background: rgba(244, 63, 94, 0.1);
+            color: #f43f5e;
+            cursor: pointer;
+            transition: 0.3s;
+        }
+        .btn-del:hover {
+            background: #f43f5e;
+            color: white;
+            box-shadow: 0 0 15px rgba(244, 63, 94, 0.4);
+        }
+
+        /* 动画 */
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        .new-row-flash {
+            animation: flashCyan 2s;
+        }
+        @keyframes flashCyan {
+            0% { background: rgba(56, 189, 248, 0.2); }
+            100% { background: transparent; }
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0f172a; }
+        ::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--primary); }
+    </style>
+>>>>>>> c5d32dfa1d38c7607af85589636a70a7ad6322e1
 </head>
 <body>
 
     <header class="navbar">
+<<<<<<< HEAD
         <div class="logo"><i class="fas fa-drone"></i> Drone_Web <span>PRO V2</span></div>
         <nav>
             <a href="/"><i class="fas fa-tachometer-alt"></i> 仪表盘</a>
             <a href="/camera"><i class="fas fa-camera"></i> 相机设置</a>
             <a href="/database" class="active"><i class="fas fa-database"></i> 数据库</a>
+=======
+        <div class="logo"><i class="fas fa-microchip"></i> DRONE RECON <span>V2</span></div>
+        <nav>
+            <a href="/"><i class="fas fa-th-large"></i> 仪表盘</a>
+            <a href="/camera"><i class="fas fa-video"></i> 相机设置</a>
+            <a href="/database" class="active"><i class="fas fa-database"></i> 数据中心</a>
+>>>>>>> c5d32dfa1d38c7607af85589636a70a7ad6322e1
         </nav>
     </header>
 
     <div class="db-page-wrapper">
+<<<<<<< HEAD
          <div class="db-header">
             <div class="title-section">
                 <h2>数据库存证</h2>
@@ -30,6 +212,20 @@
                     <span id="total-count" class="count">0</span>
                 </div>
                 <button onclick="window.loadRecords()" class="stat-badge" style="cursor:pointer; background: rgba(56, 189, 248, 0.1); border-color: #38bdf8;">
+=======
+        <div class="db-header">
+            <div class="title-section">
+                <h2>数据库存证</h2>
+                <p style="color: #64748b; margin-top: 5px;">所有扫描记录已通过安全加密存储</p>
+            </div>
+            
+            <div class="control-section">
+                <div class="stat-badge">
+                    <span style="color: #64748b; font-size: 0.8rem;">总计记录</span>
+                    <span id="total-count" class="count">0</span>
+                </div>
+                <button onclick="loadRecords()" class="stat-badge" style="cursor:pointer; background: rgba(56, 189, 248, 0.1); border-color: var(--primary);">
+>>>>>>> c5d32dfa1d38c7607af85589636a70a7ad6322e1
                     <i class="fas fa-rotate" id="refresh-icon"></i>
                 </button>
             </div>
@@ -43,13 +239,18 @@
                         <th><i class="fas fa-barcode"></i> 货物标识符</th>
                         <th>现场环境图</th>
                         <th>二维码存证</th>
+<<<<<<< HEAD
                         <th style="text-align: center;">数据管理</th>
+=======
+                        <th style="text-align: center;">操作</th>
+>>>>>>> c5d32dfa1d38c7607af85589636a70a7ad6322e1
                     </tr>
                 </thead>
                 <tbody id="db-table-body">
                     </tbody>
             </table>
         </div>
+<<<<<<< HEAD
 
         <div id="modal" class="modal" onclick="window.closeModal()">
             <img id="modalImg" style="max-width:90%; max-height:85%; border-radius:15px; box-shadow:0 0 50px rgba(0,0,0,0.5); border: 2px solid rgba(255,255,255,0.1);">
@@ -165,6 +366,97 @@
             // 显式首次激活
             window.loadRecords();
         })();
+=======
+    </div>
+
+    <div id="modal" class="modal" onclick="closeModal()" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.9); z-index:999; justify-content:center; align-items:center; backdrop-filter:blur(10px); cursor: zoom-out;">
+        <img id="modalImg" style="max-width:90%; max-height:85%; border-radius:15px; box-shadow:0 0 50px rgba(0,0,0,0.5); border: 2px solid var(--glass-border);">
+        <p style="position:absolute; bottom:30px; color:white; font-family:monospace; background:rgba(0,0,0,0.5); padding:10px 20px; border-radius:30px;">点击任意位置退出预览</p>
+    </div>
+
+    <script>
+        let lastId = null;
+
+        async function loadRecords() {
+            const icon = document.getElementById('refresh-icon');
+            icon.classList.add('fa-spin');
+
+            try {
+                const response = await fetch('/api/records');
+                const records = await response.json();
+                const tableBody = document.getElementById('db-table-body');
+                document.getElementById('total-count').innerText = records.length;
+
+                // 简单的防抖：如果数据没有变化则不重绘表格
+                if (records.length > 0 && records[0]._id === lastId) {
+                    setTimeout(() => icon.classList.remove('fa-spin'), 500);
+                    return;
+                }
+                lastId = records[0]?._id;
+
+                tableBody.innerHTML = '';
+                records.forEach((item, index) => {
+                    const row = document.createElement('tr');
+                    // 给第一行（最新的）加一个闪烁特效
+                    if(index === 0) row.classList.add('new-row-flash');
+
+                    row.innerHTML = `
+                        <td style="color: #94a3b8; font-size: 0.85rem;">
+                            ${new Date(item.timestamp).toLocaleString()}
+                        </td>
+                        <td>
+                            <span class="id-pill">${item.cargoId}</span>
+                        </td>
+                        <td>
+                            <div class="img-wrapper" onclick="showModal('${item.envImage}')">
+                                <img src="${item.envImage}" alt="环境">
+                            </div>
+                        </td>
+                        <td>
+                            <div class="img-wrapper" onclick="showModal('${item.qrImage}')">
+                                <img src="${item.qrImage}" alt="二维码">
+                            </div>
+                        </td>
+                        <td style="text-align: center;">
+                            <button class="btn-del" onclick="deleteRecord('${item._id}')">
+                                <i class="fas fa-trash-alt"></i>
+                            </button>
+                        </td>
+                    `;
+                    tableBody.appendChild(row);
+                });
+            } catch (err) {
+                console.error("加载失败:", err);
+            } finally {
+                setTimeout(() => icon.classList.remove('fa-spin'), 500);
+            }
+        }
+
+        function showModal(src) {
+            const modal = document.getElementById('modal');
+            const modalImg = document.getElementById('modalImg');
+            modal.style.display = 'flex';
+            modalImg.src = src;
+        }
+
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        async function deleteRecord(id) {
+            if(!confirm('确定要永久删除这条存证记录吗？')) return;
+            try {
+                const res = await fetch(`/api/delete-record/${id}`, { method: 'DELETE' });
+                if ((await res.json()).success) loadRecords();
+            } catch (err) {
+                alert("删除失败");
+            }
+        }
+
+        // 初始加载并设置自动刷新
+        loadRecords();
+        setInterval(loadRecords, 5000);
+>>>>>>> c5d32dfa1d38c7607af85589636a70a7ad6322e1
     </script>
 </body>
 </html>

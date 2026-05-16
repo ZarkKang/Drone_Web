@@ -24,6 +24,7 @@ app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // 3. 页面路由
 const renderPage = async (req, res, view, data) => {
+<<<<<<< HEAD
     // 如果请求头包含 partial，说明是无刷新动态切换，直接只输出内部核心 DOM 块
     if (req.headers['x-partial-content']) {
         res.render(view, { ...data, layout: false });
@@ -51,6 +52,25 @@ app.get('/database', async (req, res) => {
         renderPage(req, res, 'database', { title: '数据存证中心', records });
     } catch (err) {
         res.status(500).send("数据库读取异常");
+=======
+    // 如果请求头包含 pjax 或 partial，说明是异步加载内容，不返回布局外壳
+    if (req.headers['x-partial-content']) {
+        res.render(view, { ...data, layout: false });
+    } else {
+        // 否则返回完整页面（包含 layout 逻辑）
+        res.render(view, data);
+    }
+};
+
+app.get('/', (req, res) => renderPage(req, res, 'index', { title: '仪表盘' }));
+app.get('/camera', (req, res) => renderPage(req, res, 'camera', { title: '相机设置' }));
+app.get('/database', async (req, res) => {
+    try {
+        const records = await CargoRecord.find().sort({ timestamp: -1 }).limit(100);
+        renderPage(req, res, 'database', { title: '数据库记录', records });
+    } catch (err) {
+        res.status(500).send("DB Error");
+>>>>>>> c5d32dfa1d38c7607af85589636a70a7ad6322e1
     }
 });
 
